@@ -1,0 +1,62 @@
+set.seed(3892)
+par(mfcol=c(2,3))
+
+b0<-23
+x<-runif(100,10,20)
+eps<-rnorm(100,0,1)
+y<-b0+2*x + eps
+cor(x,y) #strong corr
+
+plot(x,y,xaxt='n',yaxt='n',xlab="X",ylab="Y",main="Strong Positive Linear")
+plot(x,-y,xaxt='n',yaxt='n',xlab="X",ylab="Y",main="Strong Negative Linear")
+
+eps<-rnorm(100,0,10)
+y2<-b0+2*x + eps
+cor(x,y2)
+plot(x,y2,xaxt='n',yaxt='n',xlab="X",ylab="Y",main="Moderate Positive Linear")
+plot(x,-y2,xaxt='n',yaxt='n',xlab="X",ylab="Y",main="Moderate Negative Linear")
+
+y3<-rnorm(100)
+plot(x,y3,xaxt='n',yaxt='n',xlab="X",ylab="Y",main="No Association")
+meanx<-mean(x)
+y4<-b0+2*(x-meanx)^2 + rnorm(100,0,1)
+plot(x,y4,xaxt='n',yaxt='n',xlab="X",ylab="Y",main="Nonlinear Association")
+#dev.print(device=postscript, "scatterplots.eps", onefile=FALSE, horizontal=FALSE)
+
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Ahora verificamos si el paquete data.table está instalado en su máquina. Sino, ipak lo instala y hace disponible.
+packages <- c("ggplot2","RSocrata") # Cargar las librerias necesarias al programa R.
+ipak(packages) # Instala o activa paquete necesario.
+
+hmarket <- read.socrata("https://data.austintexas.gov/Neighborhood/2014-Housing-Market-Analysis-Data-by-Zip-Code/hcnj-rei3") # Descarga la data al programa.
+
+
+
+options(scipen=5) #avoid scientific notation of home value
+par(mfrow=c(1,2))
+plot(hmarket$Median.household.income/1000,hmarket$Median.home.value/1000,ylab="Median Home Value ($ thousands)",xlab="Median Income ($ thousands)",las=2)
+plot(hmarket$Median.household.income/1000,hmarket$Median.rent,ylab="Median Rent",xlab="Median Income ($ thousands)",las=2)
+dev.print(device=postscript, "austinhmarketscatterplots.eps", onefile=FALSE, horizontal=FALSE)
+xu<-hmarket$Median.household.income/1000;yu<-hmarket$Median.home.value/1000
+summary(lm(yu~xu))
+cor(xu,yu)
+data.frame(xu,yu)
+
+#with trend line
+par(mfrow=c(1,2))
+plot(hmarket$Median.household.income/1000,hmarket$Median.home.value/1000,ylab="Median Home Value ($ thousands)",xlab="Median Income ($ thousands)",las=2)
+abline(lm(yu~xu),col="red")
+plot(hmarket$Median.household.income/1000,hmarket$Median.rent,ylab="Median Rent",xlab="Median Income ($ thousands)",las=2)
+abline(lm(hmarket$Median.rent~xu),col="red")
+#dev.print(device=postscript, "austinhmarketscatterplotswlineartrend.eps", onefile=FALSE, horizontal=FALSE)
+
+
+#ggplot(hmarket, aes(x=hmarket$Median.household.income, y=hmarket$Median.home.value)) + 
+ #  geom_point()+geom_smooth(method="lm",se=F)+theme_classic()+
+ #xlab("Median Home Value") +ylab("Median Income")

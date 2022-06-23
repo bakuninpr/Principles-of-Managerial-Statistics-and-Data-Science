@@ -1,0 +1,27 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.csv("Austin_Community_Survey_15to2017.csv",sep=",",header=T)
+cu<-which(names(dat)=="The.City.of.Austin.as.a.place.to.live"|names(dat)=="What.is.your.gender.")
+colnames(dat)[cu]<-c("p_live","gender")
+who<-which(dat$Year==2017)
+dat17<-dat[who,cu]
+summary(dat17)
+
+dat17$p_live2<-rep(9,nrow(dat17))
+dat17$p_live2[which(dat17$p_live==levels(dat17$p_live)[6])]<-5;dat17$p_live2[which(dat17$p_live==levels(dat17$p_live)[4])]<-4
+dat17$p_live2[which(dat17$p_live==levels(dat17$p_live)[3])]<-3;dat17$p_live2[which(dat17$p_live==levels(dat17$p_live)[1])]<-2
+dat17$p_live2[which(dat17$p_live==levels(dat17$p_live)[5])]<-1;dat17$p_live2[which(dat17$p_live2==9)]<-NA
+
+summary(dat17)
+who<-which(dat17$gender==levels(dat17$gender)[3]|dat17$gender==levels(dat17$gender)[4]|is.na(dat17$p_live2)==T)
+
+dat17<-dat17[-who,]
+table(dat17[,2],dat17[,3])
+wilcox.test(dat17[dat17$gender=="Male",3],dat17[dat17$gender=="Female",3],alternative="greater") #If m is sample size of first sample, R substracts m(m+1)/2 to test statistic while minitab does not 
+par(mfrow=c(1,2))
+barplot(table(dat17[dat17$gender=="Male",3]),main="Male Scores")
+barplot(table(dat17[dat17$gender=="Female",3]),main="Female Scores")
+#Austinbarplot.png
+
+barplot(prop.table(table(dat17[dat17$gender=="Male",3])),main="Male Scores",ylim=c(0,.52))
+barplot(prop.table(table(dat17[dat17$gender=="Female",3])),main="Female Scores",ylim=c(0,.52))
+#Austinbarplot.png
