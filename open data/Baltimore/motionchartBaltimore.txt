@@ -1,0 +1,74 @@
+##############################################################################
+# The open source software R is used to construct a motion chart to 
+# explore several housing variables such as 
+#   vacantxx, saleprxx, ownerocc/ownroc, fore, salesdom/dom
+#
+# R o R Studio for Windows can be downloaded from
+# https://cran.r-project.org/bin/windows/base/ or https://www.rstudio.com/products/rstudio/download3/. 
+# This code runs with R 3.3.1 since June, 2018. In case of error,
+# verify your version of R and the data; changes may have occurred.
+# Created by R Rivera: , 
+
+# NOTE: Each line that starts with "#" R detects as a comment.
+
+
+# First a function is created to make packages available. Function provided at https://gist.github.com/stevenworthington/3178163
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Now we run the function
+packages <- c("data.table", "googleVis", "reshape2","lubridate","dplyr") # este paquete se usan para cargar la data de data.pr.gov al programa R
+ipak(packages) #install or activate packages
+
+
+setwd("C:/miscosas/empresas/notas30012/data")
+dat_b00<-read.table("Baltimore_Housing_and_Community_Development__2000-2009.csv",sep=",",header=T)
+dat_b10<-read.table("Baltimore_Housing_and_Community_Development__2010-2014.csv",sep=",",header=T)
+pop<-read.table("Baltimore_Census_Demographics_2010-2012.csv",sep=",",header=T)
+who<-which(pop[,1]=="Baltimore City")
+pop<-pop[-who,2]
+who<-which(dat_b10$Neighborhood=="Baltimore City")
+dat_b10<-dat_b10[-who,]
+dat_b00<-dat_b00[-who,]
+
+#sub<-grep('vacant', names(dat_b00), value=TRUE) 
+sub<-grepl('vacant|salepr|ownerocc|fore|salesdom', names(dat_b00))
+dat_b00b<-dat_b00[,sub]
+dat_b00b$Neighborhood<-dat_b10[,1]
+sub<-grepl('vacant|salepr|ownroc|fore|dom', names(dat_b10))
+dat_b10b<-dat_b10[,sub]
+dat_b10b$Neighborhood<-dat_b10[,1]
+
+dat_all<-NULL
+dat_all$vacant<-cbind(c(dat_b00b$vacant01,dat_b00b$vacant02,dat_b00b$vacant03,dat_b00b$vacant04,dat_b00b$vacant05,dat_b00b$vacant06,dat_b00b$vacant07,dat_b00b$vacant08,dat_b00b$vacant09,dat_b10b$vacant10,dat_b10b$vacant11,dat_b10b$vacant12,dat_b10b$vacant13,dat_b10b$vacant14))
+dat_all$dom<-cbind(c(dat_b00b$salesdom01,dat_b00b$salesdom02,dat_b00b$salesdom03,dat_b00b$salesdom04,dat_b00b$salesdom05,dat_b00b$salesdom06,dat_b00b$salesdom07,dat_b00b$salesdom08,dat_b00b$salesdom09,dat_b10b$dom10,dat_b10b$dom11,dat_b10b$dom12,dat_b10b$dom13,dat_b10b$dom14))
+dat_all$salepr<-cbind(c(dat_b00b$salepr01,dat_b00b$salepr02,dat_b00b$salepr03,dat_b00b$salepr04,dat_b00b$salepr05,dat_b00b$salepr06,dat_b00b$salepr07,dat_b00b$salepr08,dat_b00b$salepr09,dat_b10b$salepr10,dat_b10b$salepr11,dat_b10b$salepr12,dat_b10b$salepr13,dat_b10b$salepr14))
+dat_all$ownerocc<-cbind(c(dat_b00b$ownerocc01,dat_b00b$ownerocc02,dat_b00b$ownerocc03,dat_b00b$ownerocc04,dat_b00b$ownerocc05,dat_b00b$ownerocc06,dat_b00b$ownerocc07,dat_b00b$ownerocc08,dat_b00b$ownerocc09,dat_b10b$ownroc10,dat_b10b$ownroc11,dat_b10b$ownroc12,dat_b10b$ownroc13,dat_b10b$ownroc14))
+dat_all$fore<-cbind(c(dat_b00b$fore01,dat_b00b$fore02,dat_b00b$fore03,dat_b00b$fore04,dat_b00b$fore05,dat_b00b$fore06,dat_b00b$fore07,dat_b00b$fore08,dat_b00b$fore09,dat_b10b$fore10,dat_b10b$fore11,dat_b10b$fore12,dat_b10b$fore13,dat_b10b$fore14))
+check<-matrix(unlist(dat_all),ncol=5)
+names(check)<-names(dat_all);
+dat_all<-check;rm(check)
+Year<-rep(2001:2014,each=nrow(dat_b00b))
+Community<-rep(dat_b10b$Neighborhood,times=length(1:14))
+Population<-rep(pop,times=length(1:14))
+community<-Community
+check<-data.frame(Year,Community,Population,dat_all,community)
+names(check)[4:8]<-names(dat_all)
+dat_all<-check;rm(check)
+
+names(dat_all)[3:8] = c("Population (2010)", 
+         "% of Residential Properties Vacant",
+         "Median Number of Days on the Market",
+         "Median Price of Homes Sold",
+         "% of Housing Units that are Owner-Occupied",
+         "% of Properties Under Mortgage Foreclosure")
+mc <- gvisMotionChart(dat_all, idvar="community", timevar="Year", xvar = "Median Number of Days on the Market", yvar="Median Price of Homes Sold", sizevar = "Population (2010)", colorvar='Community', options=list(width=1000, height=600))
+
+plot(mc)
+
+#cat(mc$html$chart, file="Baltimoretmp.html") #to place motion chart in a website (saved in Baltimore code directory)
+
