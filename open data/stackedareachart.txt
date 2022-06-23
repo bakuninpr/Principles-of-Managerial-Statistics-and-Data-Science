@@ -1,0 +1,56 @@
+##############################################################################
+# Se utiliza el programa gratuito de análisis estadístico llamado R para observar
+# y hacer un análisis ligero del número de quiebras radicadas en Puerto Rico por
+# Cap\'itulo desde el 2001 hasta el 2016.
+#
+# R o RStudio para Windows se puden bajar en 
+# https://cran.r-project.org/bin/windows/base/ o https://www.rstudio.com/products/rstudio/download3/
+# Este código corre en R 3.3.1 desde febrero, 2016. En caso de error,
+# verifique su versión de la data y de R ya que cambios pudieron haber occurido.
+# Creado por: Hilda Calderón
+
+# NOTA: Cada línea que empieza con "#" el programa lo detecta como un comentario.
+
+# Primero se preparan las herramientas necesarias para trabajar en el ejemplo.
+
+# Se creará una función para instalar paquetes necesarios para esta aplicación. Función provista en https://gist.github.com/stevenworthington/3178163
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Ahora verificamos si los paquetes están instalados en su máquina. Sino, ipak lo instala y hace disponible
+packages <- c("RSocrata", "plyr", "scales", "ggplot2", "reshape2")
+ipak(packages) #instala o activa paquetes necesarios
+
+setwd("C:/miscosas/empresas/notas30012/data")
+data<-read.table("Bankruptcies_PR.csv",sep=",",header=T) # load data
+
+# Cambiamos la estructura de la base de datos de formato ancho a formato largo.
+# Necesario para usar algunas funciones de R.
+names(data)[2:5]<-c("Ch.7","Ch.11","Ch.12","Ch.13")
+data_long = melt(data, id.vars=c("Month"), 
+                 measure.vars = paste("Ch.",c(7,11,12,13),sep="")) 
+names(data_long)[1:2] = c("Date","Chapter") # Cambia los nombres de dos de las columnas
+
+data_long$Date = as.Date(data_long$Date, format = "%m/%d/%Y") # Se cambia a formato de fecha la variable Fecha
+
+oct05<-which( data_long$Date=="2005-10-01");oct05[1]
+ene11<-which( data_long$Date=="2011-01-01");ene11[1]
+sep08<-which( data_long$Date=="2008-09-01");sep08[1]
+
+
+#Hacemos el 100% gráfico de área apilada para ver la distribución de los capítulos
+colnames(data_long)[2]<-"Chapter"
+ggplot(data_long, aes(x=Date,y=value,group=Chapter,fill=Chapter)) + geom_area(position='fill', alpha=0.4 , size=0.5, colour="black") + theme_bw() + scale_x_date(labels = date_format("%b/%y"), breaks = date_breaks(width = "10 month")) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      axis.text.x = element_text(angle = 90,hjust=1,size=12),
+      axis.title=element_text(size=18),legend.title=element_text(size=18),
+      legend.text=element_text(size=18),axis.ticks = element_blank())+
+geom_vline(aes(xintercept=as.numeric(data_long$Date[oct05[1]])), linetype=2) + geom_text(x = as.numeric(data_long$Date[oct05[1]]), y = 0.9,label="New Bankruptcy\n Law. Oct/05", hjust=1.1, size=3) +xlab("Date")+
+  #geom_vline(aes(xintercept=as.numeric(data_long$Date[ene11[1]])), linetype=2) + geom_text(x = as.numeric(data_long$Date[ene11[1]]), y = 0.9,label="Aumenta emigración\n a E.U. ene/11", hjust=1.1, size=2)
+  geom_vline(aes(xintercept=as.numeric(data_long$Date[sep08[1]])), linetype=2) + geom_text(x = as.numeric(data_long$Date[sep08[1]]), y = 0.9,label="Lehman Brothers\n Collapse. Sep/08", hjust=1.1, size=3) + theme(axis.title.y=element_blank()) + theme(axis.title.y=element_blank(), legend.position = "top")
+# before saving plot. Pull on plot window edge to make manually wider. If maximize is pressed plot window will be too large and labels will seem small.
+#dev.print(device=postscript, "stackedareachart.eps", onefile=FALSE, horizontal=FALSE) 

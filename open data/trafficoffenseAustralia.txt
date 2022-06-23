@@ -1,0 +1,18 @@
+#setwd("C:/miscosas/empresas/2014-15/agosto/esta6005/casestudies")
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("Traffic_camera_offences_and_fines.csv", header=TRUE, sep=",", na.strings=" ")
+
+#there appears to be no duplicates
+data.dup <- all_data[duplicated(all_data) | duplicated(all_data, fromLast = TRUE), ] #empty
+
+dat_j17<-all_data[which(all_data$Offence_Month=="06/01/2017 12:00:00 AM"),]
+
+summary(as.factor(dat_j17[,3]))
+
+library(ggplot2)
+ g<-ggplot(data=dat_j17, aes(Clt_Catg))
+g+geom_bar()
+
+ g<-ggplot(data=all_data2, aes(subject_race))
+g+geom_bar()
+

@@ -1,0 +1,60 @@
+##############################################################################
+# We use the open sources software R 
+
+# NOTE: Each line starting with "#" R detects as a comment
+
+
+
+# function to install/load required packages. Source: https://gist.github.com/stevenworthington/3178163
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Check if packages are available and if so load them. If not, install them and load them
+packages <- c("RSocrata", "plyr", "rminer", "ggplot2", "dplyr") # packages
+ipak(packages) #install or load packages
+
+setwd("C:/miscosas/empresas/notas30012/data")
+#datat<- read.socrata("https://data.ftb.ca.gov/California-Corporation-Tax/C-1-Income-Loss-And-Tax-Assessed-By-Taxable-Year/txuw-7jzg") # 
+#data <- read.socrata("https://data.maryland.gov/Transportation/Maryland-Port-Administration-General-Cargo/2ir4-626w") # 
+
+datat<-read.csv("Ca_Income_Loss_Tax_Assessed.csv", header=TRUE, sep=",", na.strings=" ")
+
+data<-read.csv("Maryland_Port_Cargo.csv", header=TRUE, sep=",", na.strings=" ")
+
+candat<-read.csv("canadaemplmntdata.csv", header=TRUE, sep=",")
+who<-which(candat[,10]=="v81673")
+candat<-candat[who,c(1,12)]
+
+
+data<-data%>%mutate(date=seq(as.Date("1998/1/1"), as.Date("2018/6/1"), "months"))
+library(scales)
+
+ii <- seq(min(datat$Taxable.Year),max(datat$Taxable.Year),by=2)
+ggplot(datat, aes(x=Taxable.Year, y=All.Tax.Assessed/1000000000)) + geom_line() + theme_bw() + xlab("Time") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),axis.text.x = element_text(angle = 90,hjust=1,size=8),axis.ticks = element_blank())+ylab("All Tax Assessed (in billions)")+scale_x_continuous(breaks = ii)
+#taxassessed
+ggplot(data, aes(x=date, y=Import.Auto.Units)) + geom_line() + theme_bw() + xlab("Time") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Auto Imports")+scale_x_date(labels = date_format("%m-%Y"),breaks=date_breaks("12 months"))
+#autoimports
+
+library(zoo)
+
+#candat<-candat%>%mutate(date=seq(as.Date("1986/1/1"), as.Date("2018/1/1"), "quarters"))
+
+df <- data.frame(x = as.yearqtr(1986 + seq(0, 128)/4), y = candat[,2]) 
+
+ggplot(data = df, aes(x, y, group = 1)) + geom_line() +scale_x_yearqtr(breaks = seq(from = min(df$x), to = max(df$x), by = 1),
+                  format = "%YQ%q")+theme_bw() + xlab("Time") + 
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      axis.text.x = element_text(angle = 90,hjust=1,size=8),axis.ticks = element_blank())+
+ylab("Tourism activity employment (in thousands)")+scale_y_continuous(limits = c(0, max(candat[,2])))
+
+
+
+# boxplot
+#candat<-ts(candat$Value,start = c(1986, 1), frequency = 4)
+#boxplot(candat~cycle(candat),xlab="Quarter",ylab="Employment (in thousands)",col="gray",ylim=c(0,max(candat)))
+  
+

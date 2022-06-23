@@ -1,0 +1,98 @@
+##############################################################################
+# We use the open source software for statistical analysis called R to explore
+# rainfall data at a weather station. R or RStudio for Windows can be downloaded at 
+# https://cran.r-project.org/bin/windows/base/ o https://www.rstudio.com/products/rstudio/download3/
+# This code was ran on R 3.3.1 January, 30, 2017. 
+# In contrast to other codes we have made available this code requires the user sets up an account with
+# NOAA by going to https://www.ncdc.noaa.gov/cdo-web/token
+# If an error shows while running this code, verify the version of your data and R, since changes may have occured.
+# Also keep in mind that access to the internet is required to access the data
+# Created by Roberto Rivera, roberto.rivera30@upr.edu
+
+#NOTE: Each line starts with "#" R detects it as a comment.
+
+#We first prepare the necessary R packages for the example.
+
+# A function is created to install necessary R packages for this application. Function originally provided at https://gist.github.com/stevenworthington/3178163
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# check if packages are installed, if they aren't, install and load
+packages <- c("RSocrata","rnoaa", "dplyr", "zoo","xts","hydroTSM")
+ipak(packages) #install required packages
+
+# NOAA requires a key (password) for the user to access their weather station data. Get NOAA key at https://www.ncdc.noaa.gov/cdo-web/token
+options(noaakey="SZSmDVohNvInlsklndQHVivghduKmIEb") #INSERT KEY WITHIN THESE QUOTES
+
+station <-read.socrata("https://data.pr.gov/Permisos-y-Ambiente/Weather-Stations-Active-and-inactive-/9na3-9brj") # Loads the rainfall data directly from the portal.
+#station<-station[station$Active=="Yes",] # If you wanted to focus just on active stations you can run this command
+
+# The following 3 lines of code will identify all PR stations
+#(stations <- ghcnd_stations())
+#who<-stations %>% filter(state == "PR") #who$id is station ids, who$elevation is elevation of stations, etc.
+#unique(who$id) #192 unique stations, the ones available at data.pr.gov
+
+i=which(station[,1]=="RQW00011641")# San Juan airport station
+
+# In what follows we assess the days a month with data available at San Juan airport station
+stationpre <- ghcnd(stationid=station[i,1]) # Access daily weather data from NOAA's FTP server for the San Juan airport station
+
+dat_day <- stationpre%>%filter(element=="PRCP") # filter to just get rainfall data
+
+# organize data
+dat_day <- dat_day[,order(names(dat_day))]
+
+# The two functions below will turn a factor variable to numeric
+asNumeric <- function(x) as.numeric(as.character(x))
+factorsNumeric <- function(d) modifyList(d, lapply(d[, sapply(d, is.factor)], asNumeric))    
+dat2 <- factorsNumeric(dat_day[,97:127])
+
+dat_day$month <- month.abb[dat_day$month] # Changes month format from numeric to the corresponding abbreviated name of the month
+dat_day$date <- as.Date(paste("1",dat_day$month,dat_day$year,sep="/"),format="%d/%b/%Y") #creates the variable date
+
+# Calculate "days with data per month"
+dayspermonth<-apply(dat2, MARGIN = 1, FUN = function(x) length(x[!is.na(x)]) )
+dayspermonth<-zoo(dayspermonth,dat_day$date)
+
+# Lets check if there is rainfall data for the 12 months of each year.
+Yrs = as.Date(index(dayspermonth), format = "%Y-%m-%d")
+Yrs = format(Yrs,format= "%Y")
+which(table(Yrs)!=12) # Every year is ok up to 2016
+
+par(mfrow=c(1,2))
+plot(dayspermonth, ylab="Days per month", xlab="Date", main="Weather Station 1") #this figure should show a fixed pattern. It generally does, except Oct 1997 missing a few days and Oct 2016 with only rainfaill for one day
+
+
+# For comparison we also plot the days/month for the San Juan city station
+j=which(station[,1]=="RQW00011631")
+stationpre <- ghcnd(stationid=station[j,1])
+
+dat_day <- stationpre%>%filter(element=="PRCP")
+
+# organize data
+dat_day <- dat_day[,order(names(dat_day))]
+
+dat2<-factorsNumeric(dat_day[,97:127])
+
+dat_day$month <- month.abb[dat_day$month]
+dat_day$date <- as.Date(paste("1",dat_day$month,dat_day$year,sep="/"),format="%d/%b/%Y")
+# Calculate "days with data per month"
+dayspermonth2 <- apply(dat2, MARGIN = 1, FUN = function(x) length(x[!is.na(x)]) )
+dayspermonth2 <- zoo(dayspermonth2,dat_day$date)
+
+# Lets check if there is rainfall data for the 12 months of each year.
+Yrs = as.Date(index(dayspermonth2), format = "%Y-%m-%d")
+Yrs = format(Yrs,format= "%Y")
+which(table(Yrs)!=12) # There are 5 years with missing months
+
+# The next three lines will add the missing months and a NA as the corresponding number of days to the time series
+len_obj<-round(as.numeric(difftime(max(index(dayspermonth2)),min(index(dayspermonth2)))))
+dat_obj <- zoo(1:len_obj, seq(from = as.Date(min(index(dayspermonth2))),
+                              to = as.Date(max(index(dayspermonth2))), by = "1 month"))
+dayspermonth2 = cbind(dayspermonth2, dat_obj)
+plot(x = index(dayspermonth2), y = dayspermonth2$dayspermonth, ylab="Days per month", xlab="Date", type="l", main="Weather Station 2")#this figure should show a fixed pattern. But we obseve that the data is incomplete for this particular station. For example, there is no data from 1924 to 1949.
+
