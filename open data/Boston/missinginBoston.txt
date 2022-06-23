@@ -1,0 +1,59 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("crimeBoston.csv", header=TRUE, sep=",", na.strings=" ")
+aggrav<-all_data[all_data$OFFENSE_CODE_GROUP=="Aggravated Assault",]
+data.dup <- aggrav[duplicated(aggrav) | duplicated(aggrav, fromLast = TRUE), ]
+dim(data.dup) #no duplicates!
+
+missornot<-ifelse(all_data$OFFENSE_CODE_GROUP=="Missing Person Reported",1,0)
+table(all_data$DAY_OF_WEEK,missornot)
+
+# change order and give probabilities
+table(all_data$DAY_OF_WEEK,missornot)[c(4,2,6,7,5,1,3),2:1]/sum(table(all_data$DAY_OF_WEEK,missornot))
+# can copy the table above without denominator into Minitab for cat inference chapter problem. Then save image as MinitabmissBos.png
+
+#chisq.test(table(all_data$DAY_OF_WEEK,missornot)) #null is rejected
+
+#conditional probabilities of missing per day
+miss<- all_data[all_data$OFFENSE_CODE_GROUP=="Missing Person Reported",]
+summary(miss$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/summary(all_data$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]
+
+#conditional probabilities of NOT missing per day
+Nmiss<- all_data[all_data$OFFENSE_CODE_GROUP!="Missing Person Reported",]
+summary(Nmiss$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/summary(all_data$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]
+
+nrow(miss)/nrow(all_data) # prob of missing person
+summary(miss$DAY_OF_WEEK)/summary(all_data$DAY_OF_WEEK)#prob of missing person given day of week
+
+
+dt_d<-all_data[all_data$DISTRICT=="A1",] #downtown
+missdt<- dt_d[dt_d$OFFENSE_CODE_GROUP=="Missing Person Reported",] 
+#summary(missdt$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/sum(summary(missdt$DAY_OF_WEEK)) #prob of day of week given missing downtown
+
+nrow(missdt)/nrow(dt_d) # prob of missing person
+summary(missdt$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/summary(dt_d$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]#prob of missing person given day of week
+
+Nmissdt<- all_data[all_data$OFFENSE_CODE_GROUP!="Missing Person Reported" & all_data$DISTRICT=="A1",]
+summary(Nmissdt$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/summary(dt_d$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]#prob of NOT missing person given day of week
+
+#Problem prove prob of missing person is 0.003 using P(D_i) below
+d<-summary(all_data$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/sum(summary(all_data$DAY_OF_WEEK))
+sum(summary(missdt$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]/summary(dt_d$DAY_OF_WEEK)[c(4,2,6,7,5,1,3)]*d)
+
+
+# others 
+summary(aggrav$DAY_OF_WEEK)
+
+
+larceny<-all_data[all_data$OFFENSE_CODE_GROUP=="Larceny",]
+data.dup <- larceny[duplicated(larceny) | duplicated(larceny, fromLast = TRUE), ]
+dim(data.dup)
+
+
+summary(larceny$DAY_OF_WEEK)/sum(summary(larceny$DAY_OF_WEEK)) #prob of day of week given theft reported
+
+nrow(larceny)/nrow(all_data) # prob of theft
+summary(larceny$DAY_OF_WEEK)/summary(all_data$DAY_OF_WEEK)#prob of theft given day of week
+
+auto<- all_data[all_data$OFFENSE_CODE_GROUP=="Auto Theft",]
+summary(auto$DAY_OF_WEEK)/sum(summary(auto$DAY_OF_WEEK))
+
