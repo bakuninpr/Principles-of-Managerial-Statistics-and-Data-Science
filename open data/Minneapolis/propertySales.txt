@@ -1,0 +1,25 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.csv("Minneapolis_Property_Sales_20102013.csv", header=TRUE, sep=",", na.strings=" ")
+dat_r<-dat[dat$PropType=="Residential",]
+who<-which(as.numeric(as.character(dat_r$Adjusted_Sale_Price))<=10000|as.numeric(as.character(dat_r$Gross_Sale_Price))<=10000)
+dat_r2<-dat_r[-who,]
+
+
+dat_ac<-dat[dat$PropType=="Apartment Condominium",]
+dat_i<-dat[dat$PropType=="Industrial",]
+
+library(ggplot2)
+p <- ggplot(dat_i, aes(InRTOStudy, as.numeric(as.character(Gross_Sale_Price))/1000)) #use timeint if using saved csv file
+p + geom_boxplot(outlier.colour = "red", outlier.shape = 1)+
+xlab('Ratio Study')+ylab('Gross Sale Price')+
+theme_bw()+theme(#plot.title = element_text(hjust = 0.5),#axis.line.y=element_blank(),
+          #axis.text.y=element_blank(),
+          #axis.ticks.y=element_blank(),
+          #axis.title.y=element_blank(),
+          #axis.title.x="Copper",
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+
+
