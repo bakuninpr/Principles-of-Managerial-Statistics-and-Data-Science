@@ -1,0 +1,23 @@
+#
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Ahora verificamos si el paquete data.table está instalado en su máquina. Sino, ipak lo instala y hace disponible
+packages <- "RSocrata" # este paquete se usa para cargar la data de data.pr.gov al programa R
+ipak(packages) #instala o activa paquete necesario
+
+d.ic=read.socrata("https://data.lacity.org/A-Livable-and-Sustainable-City/LASAN-Number-of-Catch-Basins-Cleaned/8a3v-f7cr")
+#data set 
+setwd("C:/miscosas/empresas/notas30012/data")
+d.ic<-read.csv("LASAN___Number_of_Catch_Basins_Cleaned.csv", header=TRUE, sep=",", na.strings=" ")
+# for relative frequency do
+h = hist(d.ic[7:48,4],plot=F)
+h$density = h$counts/sum(h$counts)
+plot(h,freq=FALSE,ylab="Relative Frequency",main="",col="darkgray",xlab="Catch Basins Cleaned/Month",las=2)
+#hist(d.ic$Diversion,breaks="FD")
+
+#dev.print(device=postscript, "histCatchBasinsCleanedLA.eps", onefile=FALSE, horizontal=FALSE)
