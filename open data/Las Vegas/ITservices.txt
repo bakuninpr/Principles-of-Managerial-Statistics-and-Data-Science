@@ -1,0 +1,11 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("IT_Satisfaction_Survey.csv", header=TRUE, sep=",", na.strings=" ")
+dim(all_data)
+all_data<-all_data[-nrow(all_data),] #last row is total
+
+
+
+summary(all_data)
+
+table(all_data$Satisfaction.Level)/sum(table(all_data$Satisfaction.Level))
+
