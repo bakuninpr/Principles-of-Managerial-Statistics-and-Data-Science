@@ -1,0 +1,6 @@
+library(RSocrata)
+datorp<-read.socrata("https://data.cityoforlando.net/Permitting/Building-Permits-Issued/k5wb-xgjc",stringsAsFactors=T)
+table(datorp$Sub.Type)
+
+table(datorp$Sub.Type)/sum(table(datorp$Sub.Type))
+barplot(table(datorp$Sub.Type)/sum(table(datorp$Sub.Type)))

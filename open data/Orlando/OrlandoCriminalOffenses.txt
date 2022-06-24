@@ -1,0 +1,4 @@
+library(RSocrata)
+dator<-read.socrata("https://data.cityoforlando.net/Orlando-Police/OPD-Crimes/4y9m-jbmz",stringsAsFactors=T)
+table(dator$Case.Offense.Category,dator$Case.Offense.Charge.Type)
+table(dator$Case.Offense.Category)/sum(table(dator$Case.Offense.Category))*100
