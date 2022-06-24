@@ -4,3 +4,7 @@ Book that introduces students to the basics of statistics and data science. Book
 In this repository we share R codes used for open data examples and case studies in the book.
 
 While all datasets are open, these datasets may change in time. For the sake of reproducibility, fixed versions of the datasets may be accessed at: https://bcs.wiley.com/he-bcs/Books?action=resource&bcsId=11701&itemId=1119486416&resourceId=46838
+
+All R code was fully functional when the book was published but keep in mind that future improvements by R developers or R library developers may result in errors developing. 
+R o R Studio for Windows can be downloaded from https://cran.r-project.org/bin/windows/base/ or https://www.rstudio.com/products/rstudio/download3/. 
+In case of error while running code, verify your version of R and the packages; changes may have occurred.
