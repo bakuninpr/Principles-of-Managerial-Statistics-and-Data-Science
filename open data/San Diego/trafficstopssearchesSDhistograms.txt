@@ -1,0 +1,53 @@
+#setwd("C:/miscosas/empresas/2014-15/agosto/esta6005/casestudies")
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("vehicle_stops_2016_datasd.csv", header=TRUE, sep=",", na.strings=" ")
+all_data<-all_data[all_data$stop_cause=="Moving Violation",]
+library(reshape2)
+all_data4<-all_data
+
+levels(all_data4$subject_race)[levels(all_data4$subject_race)%in%c("A","C","D","F","G","J","K","L","V")] <- "A"
+levels(all_data4$subject_race)[levels(all_data4$subject_race)%in%c("I","O","P","S","U","X","Z")] <- "O"
+levels(all_data4$subject_sex)[levels(all_data4$subject_sex)%in%c(" ","X")] <- " "
+levels(all_data4$searched)[levels(all_data4$searched)%in%c("N","n")] <- "N"
+levels(all_data4$searched)[levels(all_data4$searched)%in%c("\\"," ")] <- " "
+all_data4$subject_race[grepl("^\\s*$", all_data4$subject_race)] <- NA
+all_data4$subject_sex[grepl("^\\s*$", all_data4$subject_sex)] <- NA
+all_data4$searched[grepl("^\\s*$", all_data4$searched)] <- NA
+all_data4$subject_age[grepl("No Age", all_data4$subject_age)] <- NA
+all_data4 <- droplevels(all_data4[!grepl("^\\s*$", all_data4$subject_race),,drop=FALSE] )
+all_data4$subject_age<-as.numeric(all_data4$subject_age)
+all_data4<-subset(all_data4, !is.na(subject_race))
+all_data4<-subset(all_data4, subject_age>=16)
+summary(all_data4$subject_age)
+
+boxplot(subject_age~searched,data=all_data4)
+
+#levels(all_data4$subject_race)<-c("Asian", "Black","Hispanic","Other","White") #to change to better race levels
+library(ggplot2)
+ggplot(all_data4,aes(x=subject_age))+geom_histogram()+facet_grid(subject_race~.)+theme_bw()
+
+all_data5<-subset(all_data4, searched=="Y")
+
+ggplot(all_data5,aes(x=subject_age))+geom_histogram()+facet_grid(subject_race~.)+xlab("Age") + ylab("Count") + #ggtitle("Vehicle Stops in San Diego")+
+theme(axis.line.y=element_blank(),
+          #axis.text.y=element_blank(),
+          #axis.ticks.y=element_blank(),
+          #axis.title.y=element_blank(),
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+#dev.print(device=postscript, "trafficstopssearchesSDhistograms.eps", onefile=FALSE, horizontal=FALSE)
+
+all_data6<-subset(all_data4, searched=="N")
+
+ggplot(all_data6,aes(x=subject_age))+geom_histogram()+facet_grid(subject_race~.)+xlab("Age") + ylab("Count") + #ggtitle("Vehicle Stops in San Diego")+
+theme(axis.line.y=element_blank(),
+          #axis.text.y=element_blank(),
+          #axis.ticks.y=element_blank(),
+          #axis.title.y=element_blank(),
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+#dev.print(device=postscript, "trafficstopssearchesSDhistogramsN.eps", onefile=FALSE, horizontal=FALSE)
