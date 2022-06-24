@@ -1,0 +1,28 @@
+library(tidyverse)
+library(ggplot2)
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("Buffalo_Monthly_Recycling.csv", header=TRUE, sep=",", na.strings=" ")
+
+dat<-all_data[all_data$TYPE=="Curb Recycling",]
+dat<-dat%>%mutate(date=seq(as.Date("2011/1/1"), as.Date("2018/6/1"), "months"))
+plot(dat[,4],type="l")
+boxplot(TOTAL..IN.TONS.~MONTH,data=dat,las=2)
+plot(decompose(ts(dat[,4],freq=12)))
+
+#line chart problem Ch 3
+p1 <- qplot(date, TOTAL..IN.TONS., data=dat, geom = "line")+
+scale_x_date(date_labels = "%b %y", date_breaks = "1 months") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+axis.title=element_text(size=14)) + 
+  ylab("Curb Recycling (Tons)") + xlab("Date")
+
+
+
+#line chart problem 2, Ch 3
+dat<-all_data[all_data$TYPE=="Curb Garbage",]
+dat<-dat%>%mutate(date=seq(as.Date("2011/1/1"), as.Date("2018/6/1"), "months"))
+p2 <- qplot(date, TOTAL..IN.TONS., data=dat, geom = "line")+
+scale_x_date(date_labels = "%b %y", date_breaks = "1 months") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+axis.title=element_text(size=14)) + 
+  ylab("Curb Garbage (Tons)") + xlab("Date")
