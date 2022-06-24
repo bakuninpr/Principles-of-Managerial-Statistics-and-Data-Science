@@ -1,0 +1,55 @@
+# Water Quality, Wisconsin
+library(ggplot2)#ggplot
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("DOHMH_Beach_Water_Quality_DataNYC.csv", header=TRUE, sep=",", na.strings=" ")
+all_data<-all_data[order(as.Date(all_data$Sample.Date, format="%m/%d/%Y")),]
+data.dup <- all_data[duplicated(all_data) | duplicated(all_data, fromLast = TRUE), ] #empty
+
+yr<-as.numeric(format(as.Date(all_data$Sample.Date, format="%m/%d/%Y"),"%Y"))
+yr[1:5]
+summary(yr)
+
+man_b_17<-all_data[yr==2017 & all_data$Beach.Name=="MANHATTAN BEACH" &all_data$Sample.Location=="Center",]
+man_b_17[,c(2,5)]
+
+# geometric mean excercise
+gm_mean = function(x, na.rm=TRUE, zero.propagate = FALSE){
+  if(any(x < 0, na.rm = TRUE)){
+    return(NaN)
+  }
+  if(zero.propagate){
+    if(any(x <= 0, na.rm = TRUE)){
+      return(0)
+    }
+    exp(mean(log(x), na.rm = na.rm))
+  } else {
+    exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x[x > 0]))
+  }
+}
+gm_mean(c(60,320,100,110,48,4))
+
+man_b_17_a<-all_data[yr==2017 & all_data$Beach.Name=="MANHATTAN BEACH",]
+man_b_17_a[,c(2,5)]
+summary(man_b_17_a[,5])
+
+2/60-3*sqrt(2/60*(58/60)/60)
+2/60+3*sqrt(2/60*(58/60)/60)
+
+
+# data science part
+yn<-ifelse(man_b_17_a[,5]>=200,1,0)
+yn<-yn[-which(is.na(yn)==T)]
+
+library(boot)
+pp <- function(x,i){
+y<-x[i] 
+sum(y)/length(y)
+}
+bstrap<-boot(yn, pp, R = 50000)
+boot.ci(bstrap,conf=0.99,type="perc")
+
+ncl<-nclass.FD(bstrap$t)#nclass.Sturges(bstrap$t) #didn't like how Sturges looked
+p3<-ggplot(as.data.frame(bstrap$t), aes(x=bstrap$t)) + geom_histogram(bins=ncl)#qplot(.stdresid, data=myfortfit,geom="histogram")
+    p3<-p3+ylab("")+xlab('Resampled Proportions')
+    p3<-p3+ggtitle('Histogram')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=20),axis.title=element_text(size=20))
