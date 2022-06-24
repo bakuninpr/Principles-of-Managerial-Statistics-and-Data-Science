@@ -1,0 +1,90 @@
+#library(RSocrata)
+#datch<-read.socrata("https://data.cityofchicago.org/Education/Chicago-Public-Schools-School-Profile-Information-/8i6r-et8s",stringsAsFactors=T)
+
+setwd("C:/miscosas/empresas/notas30012/data")
+datch<-read.csv("Chicago_Public_Schools_-_School_Profile_Information_SY1617.csv",sep=",",header=T)
+plot(College_Enrollment_Rate_School~Average_ACT_School,xlab="Average ACT score", ylab="College Enrollment Rate",data=datch)
+datch2<-datch
+datch2$Bilingual_Services[grepl("^\\s*$", datch2$Bilingual_Services)] <- NA
+datch2 <- droplevels(datch2[!grepl("^\\s*$", datch2$Bilingual_Services),,drop=FALSE] )
+summary(datch2$Bilingual_Services)
+boxplot(Average_ACT_School~Bilingual_Services,data=datch2)
+
+# matrix plot
+pairs(datch2[,c("College_Enrollment_Rate_School","Average_ACT_School","Graduation_Rate_School")],upper.panel=NULL)
+#dev.print(device=postscript, "C:/miscosas/empresas/notas30012/figures/chicagocollegematrixplot.eps", onefile=FALSE, horizontal=FALSE)
+
+#### residuals support polynomial fit
+library(ggplot2)
+datch3<-datch2[,c("College_Enrollment_Rate_School","Average_ACT_School","Graduation_Rate_School","Bilingual_Services")]
+datch3<-datch3[complete.cases(datch3), ]
+fit1<-lm(College_Enrollment_Rate_School~poly(Average_ACT_School,1,raw=TRUE)+Graduation_Rate_School+Bilingual_Services,data=datch3)
+summary(fit1)
+anova(fit1)
+lm1<-lm(College_Enrollment_Rate_School~1,data=datch3)
+anova(lm1,fit1)
+var(datch3$College_Enrollment_Rate_School)*113 #total sum of squares
+var(datch3$College_Enrollment_Rate_School)*113-12530.6 #regression sum of squares
+myfortfit<-fortify(fit1)
+# USING RESIDUALS INSTEAD OF STD RESIDUALS FOR ANOVA. I INTRODUCE THE STD RESID IN 
+# THE SIMPLE LINEAR REG CHAPTER AND CAN USE .stdresid from fortify then
+# Homoscedasticity assumption
+p1<-ggplot(data = myfortfit, aes(x = .fitted, y = .stdresid)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point()+ylab('Standardized Residual')+xlab('Fitted Values')+
+  ggtitle('Standardized Residual vs Fitted')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7)) 
+
+
+
+# Normality assumption
+p2<-ggplot(data = myfortfit, aes(sample = .stdresid)) +
+  stat_qq() + ggtitle('Normal Probability Plot')+ #qq plot and normal probability plot are not the same thing
+  ylab('Sample Quantiles')+xlab('Theoretical Quantiles')+
+  geom_abline(colour = "firebrick3")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7))
+
+  ncl<-nclass.Sturges(fit2$residuals)
+p3<-ggplot(myfortfit, aes(x=.stdresid)) + geom_histogram(bins=ncl)#qplot(.stdresid, data=myfortfit,geom="histogram")
+    p3<-p3+ylab("")+xlab('Standardized Residual')
+    p3<-p3+ggtitle('Histogram')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7))
+
+multiplot(p2,p3,p1,cols=2)
+#dev.print(device=postscript, "C:/miscosas/empresas/notas30012/figures/diagnosticplotschicagocollege.eps", onefile=FALSE, horizontal=FALSE)
+
+fit<-lm(College_Enrollment_Rate_School~poly(Average_ACT_School,2,raw=TRUE)+Graduation_Rate_School+Bilingual_Services,data=datch3)
+summary(fit)
+
+fit2<-update(fit,.~.-Bilingual_Services)
+summary(fit2)
+fit3<-update(fit2,.~.-Graduation_Rate_School)
+summary(fit3)
+
+myfortfit<-fortify(fit3)
+# USING RESIDUALS INSTEAD OF STD RESIDUALS FOR ANOVA. I INTRODUCE THE STD RESID IN 
+# THE SIMPLE LINEAR REG CHAPTER AND CAN USE .stdresid from fortify then
+# Homoscedasticity assumption
+p1<-ggplot(data = myfortfit, aes(x = .fitted, y = .stdresid)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point()+ylab('Standardized Residual')+xlab('Fitted Values')+
+  ggtitle('Standardized Residual vs Fitted')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7)) 
+
+
+
+# Normality assumption
+p2<-ggplot(data = myfortfit, aes(sample = .stdresid)) +
+  stat_qq() + ggtitle('Normal Probability Plot')+ #qq plot and normal probability plot are not the same thing
+  ylab('Sample Quantiles')+xlab('Theoretical Quantiles')+
+  geom_abline(colour = "firebrick3")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7))
+
+  ncl<-nclass.Sturges(fit2$residuals)
+p3<-ggplot(myfortfit, aes(x=.stdresid)) + geom_histogram(bins=ncl)#qplot(.stdresid, data=myfortfit,geom="histogram")
+    p3<-p3+ylab("")+xlab('Standardized Residual')
+    p3<-p3+ggtitle('Histogram')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7))
+
+multiplot(p2,p3,p1,cols=2)
+#dev.print(device=postscript, "C:/miscosas/empresas/notas30012/figures/diagnosticplotschicagocollege.eps", onefile=FALSE, horizontal=FALSE)
