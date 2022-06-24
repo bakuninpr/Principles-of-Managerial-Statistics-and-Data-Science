@@ -1,0 +1,144 @@
+##############################################################################
+# The open source software R is used to construct a motion chart to 
+# explore several indicators such as unemployment rate, social security 
+# participants and others in time.
+#
+# R o R Studio for Windows can be downloaded from
+# https://cran.r-project.org/bin/windows/base/ or https://www.rstudio.com/products/rstudio/download3/. 
+# This code runs with R 3.3.1 since June, 2018. In case of error,
+# verify your version of R and the data; changes may have occurred.
+# Created by: Hilda Calderon, 
+
+# NOTE: Each line that starts with "#" R detects as a comment.
+
+
+# The following function makes packages available. Function provided at https://gist.github.com/stevenworthington/3178163
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Now we run the function
+packages <- c("data.table", "googleVis", "reshape2","lubridate","dplyr") # este paquete se usan para cargar la data de data.pr.gov al programa R
+ipak(packages) #install or activate packages
+
+# We get the data straight from indicadores.pr we also do necessary wrangling of some indicadors.
+dat.1 <- fread("https://indicadores.estadisticas.pr/dataset/2e593d05-84c3-4c36-964a-6377fd343266/resource/2e0368de-bb51-4232-967e-f27564d3df39/download/numero_de_ni_os_sobrevivientes_beneficiarios_de_seguro_social_por_municipio_en_puerto_rico_al_fi.csv")
+dat.2 <- fread("https://indicadores.estadisticas.pr/dataset/fbf4db39-2635-48c5-9187-0339e7d8fc00/resource/640c1fbb-4a6a-4426-b91a-626de741d084/download/numero_de_viudos_y_padres_sobrevivientes_beneficiarios_de_seguro_social_por_municipio_en_puerto_.csv")
+dat.2$Year = year(as.Date(paste(as.character(dat.2$Year),"01", "01", sep="-"), format = "%m/%d/%Y"))
+dat.3 <- fread("https://indicadores.estadisticas.pr/dataset/0c2ec9d1-71a2-4ad9-b50c-19861ea569a5/resource/76e03c50-d716-420a-95fa-de9c50a0ade1/download/numero_de_hijos_de_trabajadores_retirados_beneficiarios_de_seguro_social_por_municipio_en_puerto.csv")
+dat.4 <- fread("https://indicadores.estadisticas.pr/dataset/01b2c150-ac52-45d4-9d81-85aa71c35043/resource/7319e421-a893-479d-95e2-6f770c212dfd/download/numero_de_trabajadores_retirados_beneficiarios_de_seguro_social_por_municipio_en_puerto_rico_al_.csv")
+dat.5 <- fread("https://indicadores.estadisticas.pr/dataset/2538e248-75b1-4bcd-9c9c-6b1afe87c544/resource/849906e8-5c95-4580-9fd0-abb0c026f031/download/numero_de_beneficiarios_de_seguro_social_por_municipio_en_puerto_rico_al_final_de_cada_a_o_calen.csv")
+dat.6 <- fread("https://indicadores.estadisticas.pr/dataset/57e47d46-4666-48b0-8c4a-64bb5596ce60/resource/a393f4a7-cb44-4e62-8caa-c37becc3abea/download/numero_de_conyugues_de_trabajadores_retirados_beneficiarios_de_seguro_social_por_municipio_en_pu.csv")
+dat.7 <- fread("https://indicadores.estadisticas.pr/dataset/db7e4d2c-4c07-40d1-9792-e75a14d9f54e/resource/68f7fe72-1114-42cf-ad7a-e6e4faae112e/download/numero_de_trabajadores_incapacitados_beneficiarios_de_seguro_social_por_municipio_en_puerto_rico.csv")
+dat.8 <- fread("https://indicadores.estadisticas.pr/dataset/70840b4e-322f-42d6-be14-c558e99b6c35/resource/512d5140-b51c-42e7-a4fc-403b7de38f9f/download/numero_de_hombres_de_65_a_os_o_mas_beneficiarios_de_seguro_social_en_puerto_rico_al_final_de_cad.csv")
+dat.9 <- fread("https://indicadores.estadisticas.pr/dataset/ffe62330-9504-43f2-9496-21358e0b5006/resource/c5578c3c-8428-4d41-be01-1807029b6062/download/numero_de_feminas_de_65_o_mas_beneficiarias_de_seguro_social_en_puerto_rico_al_final_de_cad.csv")
+dat.10 <- fread("https://indicadores.pr/dataset/24ceee73-5f0a-42e8-8959-51741e218534/resource/3b4ed7e5-ca2c-44c1-9e09-053a2cdb531d/download/laus_lf.csv")
+dat.10<-as.data.frame(dat.10)
+dat.10 = dat.10[,c(1,4:81)]
+dat.10$Year = year(as.Date(dat.10$Month,format = "%m/%d/%Y"))
+dat.10$Month = month(as.Date(dat.10$Month,format = "%m/%d/%Y"))
+dat.10<-dat.10 %>%
+  group_by(Year) %>%
+  summarise_at(vars(-Month), funs(mean(., na.rm=TRUE))) #mean by year
+names(dat.10) = gsub(".NSA", "", names(dat.10))
+names(dat.10)[names(dat.10)=="Manat"] = "Manati"
+dat.11 <- fread("https://indicadores.pr/dataset/f096f252-bae7-4976-85ae-bee714ef6ff8/resource/8de254b0-b769-4a4e-b145-9a6975369b91/download/laus_ur.csv")
+dat.11<-as.data.frame(dat.11)
+dat.11 = dat.11[,c(1,4:81)]
+dat.11$Year = year(as.Date(dat.11$Month,format = "%m/%d/%Y"))
+dat.11$Month = month(as.Date(dat.11$Month,format = "%m/%d/%Y"))
+dat.11<-dat.11 %>%
+  group_by(Year) %>%
+  summarise_at(vars(-Month), funs(mean(., na.rm=TRUE))) #mean by year
+names(dat.11) = gsub(".NSA", "", names(dat.11))
+names(dat.11)[names(dat.11)=="Manat"] = "Manati"
+
+
+# The estimated anual population for each municipality is also retrieved. 
+pop <- fread("https://indicadores.pr/dataset/2eabdd0d-625b-4936-af25-5d0258e86ae4/resource/8a2b3a66-7248-4c21-9631-545df1ffc2d9/download/estimados_anuales_poblacionales_por_municipio_y_puerto_rico_annual_population_estimates_for_puer.csv")
+#pop$Year = as.Date(paste(as.character(pop$Año),"01", "01", sep="-"), format = "%Y-%m-%d")
+
+# Some of the special spanish characters will be changed for simplicity
+old = c("ñ", "á", "é", "í", "ó", "ú", "ü")
+new = c("n", "a", "e", "i", "o", "u", "u")
+for (i in 1:length(old)){
+names(pop) = gsub(old[i], new[i], names(pop))
+names(dat.10) = gsub(old[i], new[i], names(dat.10))
+names(dat.11) = gsub(old[i], new[i], names(dat.11))
+}
+
+names(pop)[1]<-"Year"
+
+vars = c("Population", 
+         "Rate of surviving kids participating in Social Security",
+         "Rate of surviving widowers and parents participating in Social Security",
+         "Rate of children of retired workers participating in Social Security",
+         "Rate of retired workers participating in Social Security",
+         "Rate of participants in Social Security",
+         "Rate of spouses of retired workers participating in Social Security",
+         "Rate of children of disabled workers participating in Social Security",       
+         "Rate of Males 65+ participants of Social Security",
+         "Rate of Females 65+ participants of Social Security",
+         "Mean Workforce Rate",
+         "Mean Unemployment Rate")
+
+# We change the format of the data set to be able to use later R 
+
+pop_long = melt(pop, id.vars=c("Year"), 
+                 measure.vars = names(pop)[!names(pop) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[1])
+dat.1_long = melt(dat.1, id.vars=c("Year"),
+                  measure.vars = names(dat.1)[!names(dat.1) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[2])
+dat.2_long = melt(dat.2, id.vars=c("Year"),
+                  measure.vars = names(dat.2)[!names(dat.2) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[3])
+dat.3_long = melt(dat.3, id.vars=c("Year"),
+                  measure.vars = names(dat.3)[!names(dat.3) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[4])
+dat.4_long = melt(dat.4, id.vars=c("Year"),
+                  measure.vars = names(dat.4)[!names(dat.4) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[5])
+dat.5_long = melt(dat.5, id.vars=c("Year"),
+                  measure.vars = names(dat.5)[!names(dat.5) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[6])
+dat.6_long = melt(dat.6, id.vars=c("Year"),
+                  measure.vars = names(dat.6)[!names(dat.6) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[7])
+dat.7_long = melt(dat.7, id.vars=c("Year"),
+                  measure.vars = names(dat.7)[!names(dat.7) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[8])
+dat.8_long = melt(dat.8, id.vars=c("Year"),
+                  measure.vars = names(dat.8)[!names(dat.8) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[9])
+dat.9_long = melt(dat.9, id.vars=c("Year"),
+                  measure.vars = names(dat.9)[!names(dat.9) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[10])
+dat.10_long = melt(dat.10, id.vars=c("Year"),
+                  measure.vars = names(dat.10)[!names(dat.10) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[11])
+dat.11_long = melt(dat.11, id.vars=c("Year"),
+                  measure.vars = names(dat.11)[!names(dat.11) %in% c('Ano',"Year", 'Puerto.Rico', "Month")], value.name = vars[12])
+
+# Now we set a new data set object with a Year and Municipality column plus each indicator 
+
+dat = merge(pop_long, dat.1_long, by=c("Year", "variable"))
+dat = merge(dat, dat.2_long, by=c("Year", "variable"))
+dat = merge(dat, dat.3_long, by=c("Year", "variable"))
+dat = merge(dat, dat.4_long, by=c("Year", "variable"))
+dat = merge(dat, dat.5_long, by=c("Year", "variable"))
+dat = merge(dat, dat.6_long, by=c("Year", "variable"))
+dat = merge(dat, dat.7_long, by=c("Year", "variable"))
+dat = merge(dat, dat.8_long, by=c("Year", "variable"))
+dat = merge(dat, dat.9_long, by=c("Year", "variable"))
+dat = merge(dat, dat.10_long, by=c("Year", "variable"))
+dat = merge(dat, dat.11_long, by=c("Year", "variable"))
+
+# Rates are calculated for each variable by dividing by the population of each municipality 
+dat<-as.data.frame(dat)
+dat.rate = dat[,4:(ncol(dat)-1)]/dat[,"Population"]*100
+dat[,4:(ncol(dat)-1)] = dat.rate
+names(dat)[2] = 'Municipality'
+dat$municipality <- dat$Municipality # This variable is necessary for the motion chart
+
+#----------------------------------------
+
+# Create the motion chart
+mc <- gvisMotionChart(dat, idvar="Municipality", timevar="Year", yvar = "Mean Unemployment Rate", xvar="Mean Workforce Rate", sizevar = "Population", colorvar='municipality', options=list(width=1000, height=600))
+
+plot(mc) # This command displays the motion chart in your browser
+
+# to embed the motion chart into a website follow the instructions at: https://stackoverflow.com/questions/4646779/embedding-googlevis-charts-into-a-web-site
+

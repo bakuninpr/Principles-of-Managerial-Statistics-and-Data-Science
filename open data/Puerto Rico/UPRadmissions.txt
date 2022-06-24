@@ -1,0 +1,51 @@
+setwd("C:/miscosas/empresas/2014-15/agosto/esta6005/casestudies")
+all_data<-read.csv("Admitidos_a_la_Universidad_de_Puerto_Rico_desde_2009_hasta_2013.csv", header=TRUE, sep=",")
+
+who<-which(all_data$CAMPUS=="UTUADO")
+all_data2<-all_data[-who,]
+totalsat = (all_data2$IGS - 0.5*100*all_data2$GPA)*1.5/0.25+400
+#write.table(totalsat,file="UPR_SAT_admissions.csv",sep=",")
+
+all_data2$totalsat<-totalsat
+
+library(ggplot2)
+totalsat <- totalsat[complete.cases(totalsat)]
+binwidth<-27;n<-length(totalsat);mean<-mean(totalsat);sd<-sd(totalsat)
+qplot(totalsat, geom = "histogram", breaks = seq(662, 1596, binwidth), #about 3sd from mean totalsat
+      colour = I("black"), fill = I("white"),
+      xlab = "SAT", ylab = "Count") +
+  # Create normal curve, adjusting for number of observations and binwidth
+  stat_function( 
+    fun = function(x, mean, sd, n, bw){ 
+      dnorm(x = x, mean = mean, sd = sd) * n * bw
+    }, 
+    args = c(mean = mean, sd = sd, n = n, bw = binwidth))
+
+ggplot(all_data2, aes(x=totalsat, fill=CAMPUS)) + geom_density(alpha=.3)+
+xlab("SAT")+ ylab("")
+all_data3<-all_data2
+who<-which(all_data3$CAMPUS=="CAROLINA")#who<-which(all_data3$CAMPUS=="PONCE"|all_data3$CAMPUS=="CAROLINA")
+all_data3<-all_data3[who,]
+summary(all_data3$totalsat)#min must be 400, max 1600
+sd(all_data3$totalsat,na.rm=T)
+mu<-mean(all_data3$totalsat,na.rm=T)
+sdd<-sd(all_data3$totalsat,na.rm=T)
+binwidth<-27
+qplot(all_data3$totalsat, geom = "histogram", breaks = seq(646, 1500, binwidth), #about 3sd from mean totalsat
+      colour = I("black"), fill = I("white"),
+      xlab = "SAT", ylab = "Count")+
+theme_classic() +#theme(line = element_blank())+
+scale_x_continuous(breaks=c(round(mu-3*sdd),round(mu-2*sdd),
+round(mu-1*sdd),round(mu),round(mu+1*sdd),round(mu+2*sdd),
+round(mu+3*sdd)))
+ggplot(all_data3, aes(x=totalsat)) + geom_density(alpha=.3)+
+xlab("SAT")+ ylab("")+theme_classic() +theme(line = element_blank(),
+axis.text.y = element_blank(),axis.ticks.y=element_blank())+
+scale_x_continuous(breaks=c(round(mu-3*sdd),round(mu-2*sdd),
+round(mu-1*sdd),round(mu),round(mu+1*sdd),round(mu+2*sdd),
+round(mu+3*sdd)))
+
+
+
+
+
