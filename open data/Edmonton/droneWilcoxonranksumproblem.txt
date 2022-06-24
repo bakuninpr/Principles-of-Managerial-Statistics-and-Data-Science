@@ -1,0 +1,33 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.csv("Edmonton_Insight_Community.csv",sep=",",header=T)
+cu<-which(names(dat)=="Q17_DroneSafetyOverPeople"|names(dat)=="Q14_DroneOwn")
+colnames(dat)[cu]<-c("owner","drone_safety")
+#who<-which(dat$Year==2017)
+dat<-dat[,cu]
+summary(dat)
+
+dat$drone_safety2<-rep(9,nrow(dat))
+dat$drone_safety2[which(dat$drone_safety==levels(dat$drone_safety)[5])]<-5;dat$drone_safety2[which(dat$drone_safety==levels(dat$drone_safety)[4])]<-4
+dat$drone_safety2[which(dat$drone_safety==levels(dat$drone_safety)[3])]<-3;dat$drone_safety2[which(dat$drone_safety==levels(dat$drone_safety)[2])]<-2
+dat$drone_safety2[which(dat$drone_safety==levels(dat$drone_safety)[1])]<-1;dat$drone_safety2[which(dat$drone_safety==levels(dat$drone_safety)[6])]<-NA;
+dat$drone_safety2[which(dat$drone_safety2==9)]<-NA
+
+
+summary(dat)
+who<-which(is.na(dat$drone_safety2)==T)
+
+dat<-dat[-who,]
+
+who<-which(dat$owner=="Don't know")
+
+dat<-dat[-who,]
+table(dat[,1],dat[,3])
+wilcox.test(dat[dat$owner=="Yes",3],dat[dat$owner=="No",3],alternative="less") #If m is sample size of first sample, R substracts m(m+1)/2 to test statistic while minitab does not 
+par(mfrow=c(1,2))
+barplot(table(dat[dat$owner=="Yes",3]),main="Owner Scores")
+barplot(table(dat[dat$owner=="No",3]),main="Nonowner Scores")
+#dronesbarplot.png
+
+barplot(prop.table(table(dat[dat$owner=="Yes",3])),main="Owner Scores",ylim=c(0,.52))
+barplot(prop.table(table(dat[dat$owner=="No",3])),main="Nonowner Scores",ylim=c(0,.52))
+#dronebarplot.png
