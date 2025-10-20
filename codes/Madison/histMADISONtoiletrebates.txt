@@ -1,0 +1,23 @@
+#
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Ahora verificamos si el paquete data.table está instalado en su máquina. Sino, ipak lo instala y hace disponible
+packages <- "data.table" # este paquete se usa para cargar la data de data.pr.gov al programa R
+ipak(packages) #instala o activa paquete necesario
+d.ic=fread("https://data.cityofmadison.com/api/views/miyr-ap4j/rows.csv")
+voy<-as.numeric(gsub('\\$', '', d.ic$Amount))
+
+
+d.ic<-as.data.frame(tbl_df(d.ic))
+avg<-voy/d.ic[,3]
+# for relative frequency do
+h = hist(avg,plot=F)
+h$density = h$counts/sum(h$counts)
+plot(h,freq=FALSE,ylab="Relative Frequency",xlab="Average Monthly Rebate (in $)",main="",col="darkgray")
+
+#dev.print(device=postscript, "histMADISONtoiletrebates.eps", onefile=FALSE, horizontal=FALSE)

@@ -1,0 +1,10 @@
+library(RSocrata) 
+data<-read.socrata("https://data.baltimorecity.gov/Neighborhoods/Sustainability-2010-2012-/3khh-rk6j")
+#setwd("C:/miscosas/empresas/notas30012/data")
+#data<-read.csv("Sustainability__2010-2012_.csv", header=TRUE, sep=",", na.strings=" ")
+dat1<-data 
+s<- sapply(strsplit(dat1$carpool12, split='%', fixed=TRUE), function(x) (x[1]))
+dat1$carpool12<-as.numeric(s)
+
+fit<-lm(dirtyst12~dirtyst11+clogged12+cmos11+bkln12+carpool12,data=dat1)
+summary(fit)

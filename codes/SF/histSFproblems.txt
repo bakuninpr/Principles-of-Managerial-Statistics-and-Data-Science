@@ -1,0 +1,24 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.table("Air_Traffic_Landings_Statistics.csv",sep=",",header=T)
+names(dat)
+
+
+# first inefficient way, cuz population is not specific enough
+hist(dat$Landing.Count)
+table(dat$GEO.Region)
+
+
+# Filter by UA
+datua<-dat[dat$Operating.Airline.IATA.Code=="UA",] #I can change this to another airline later on
+datua$Activity.Period<-as.character(datua$Activity.Period)
+datua_agg<-tapply(datua$Landing.Count, datua$Activity.Period, FUN=sum)
+
+h = hist(datua_agg,plot=F)
+h$density = h$counts/sum(h$counts)
+plot(h,freq=FALSE,ylab="Relative Frequency",xlab="Monthly Landing Count",main="",col="darkgray")
+
+# check 
+datua[1:35,1]
+sum(datua[1:32,13]) #=datua_agg[1]
+
+#dev.print(device=postscript, "histSFUAlandings.eps", onefile=FALSE, horizontal=FALSE)

@@ -1,0 +1,94 @@
+library(tidyverse)
+library(ggplot2)
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("canadaemplmntdata.csv", header=TRUE, sep=",", na.strings=" ")
+
+all_data$VECTOR<-as.character(all_data$VECTOR)
+tur<-filter(all_data, grepl('v81673', VECTOR))%>%select(ï..REF_DATE,VALUE)
+names(tur)[1]<-"date"
+
+library(zoo)
+df <- data.frame(x = as.yearqtr(1986 + seq(0, 128)/4), y = tur[,2]) 
+
+ggplot(data = df, aes(x, y, group = 1)) + geom_line() +scale_x_yearqtr(breaks = seq(from = min(df$x), to = max(df$x), by = 1),
+                  format = "%YQ%q")+theme_bw() + xlab("Time") + 
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      axis.text.x = element_text(angle = 90,hjust=1,size=8),axis.ticks = element_blank())+
+ylab("Tourism activity employment (in thousands)")+scale_y_continuous(limits = c(0, max(df[,2])))
+
+
+library(ggseas)
+p2<-ggsdc(df, aes(x = x, y = y), frequency=4,method = "decompose",
+facet.titles = c("Observed",
+  "Trend", "Seasonal", "Irregular")) + geom_line()+
+ylab('')+xlab('Time')+
+theme(strip.text.x = element_text(size = 14),
+axis.text.x = element_text(angle = 90, hjust = 1))+
+scale_x_yearqtr(breaks = seq(from = min(df$x), to = max(df$x), by = 1),format = "%YQ%q")
+#prelimCanadaTourismdecomp
+
+##### FORECASTS
+h<-6
+#library(lubridate)#ymd
+n<-nrow(tur)
+dat2<-tur[1:(n-h),]#tur%>%filter(date <=yq("2017-04")) #drop last three quarters
+library(forecast)
+forecast_snaive<-snaive(dat2$VALUE,h=h)# can use as benchmark to compare other models w MASE
+# Holt- Winter method (see Chatfield pg 78 and pg 20
+# since seasonality does not appear to increase with trend the additive seasonality HW model appears appropriate
+# other_hw<-hw(tur2,h=12) #using forecast library. slightly diff results than below
+
+gs<-ts(dat2$VALUE,freq=4,start = c(1986, 1))
+fit_e<-ets(gs) #ETS(M,A,M) model, multiplicative seasonal and error model (with trend and seasonal smoothing parameter estimates being very small), suggested: see pdfpg 69 Hyndman and Koehler
+ fit_hw2 <- hw(gs, seasonal = "multiplicative") 
+fit_hw <- hw(gs, seasonal = "additive")#if seasonality effect increases with mean I should use multiplicative. If gamma and beta are false it will do Exponential Smoothing. See Chatfield pg 78
+ 
+hist(resid(fit_hw)) # for positive skew (right skew), an inverse transformation would be appropriate
+boxplot(resid(fit_hw))
+
+(lambda <- BoxCox.lambda(gs)) #transformation with lambda =1 suggested, no transformation
+
+
+
+
+#fit_hw ; fit_hw$coef ; fit_hw$SSE
+forecast_hw <- predict(fit_hw, h, prediction.interval = TRUE)
+out_s<-tur[(n-h+1):n,2]#dat%>%filter(date >ymd("2017-12-01"))
+
+
+
+#SARIMA
+acf(gs,lag=36)
+pacf(gs,lag=36)
+
+
+meh2<-gs %>% diff(lag=4)%>%diff()
+acf(meh2,lag=36)
+pacf(meh2,lag=36)
+sarima_fit <- Arima(gs, order=c(0,1,0), seasonal=c(0,1,1))
+sarima_fit2 <- Arima(gs, order=c(1,0,2), seasonal=c(1,1,0))#,lambda=0
+#sarima_fit has lower aic
+auto.arima(gs, stepwise=FALSE, approximation=FALSE)#our model has better aic
+tsdiag(sarima_fit, gof.lag=48)
+acf(resid(sarima_fit),lag=36)
+pacf(resid(sarima_fit),lag=36)
+sarima_fit_pred = predict(sarima_fit, n.ahead=h)
+
+
+#### out of sample (test set)
+accuracy(rep(mean(gs),h),out_s,)
+accuracy(forecast_snaive,out_s,)
+
+a1 <- sarima_fit %>% forecast(h =h) %>%accuracy(out_s)
+a1[,c("RMSE","MAE","MAPE","MASE")]
+a2 <- fit_hw %>% forecast(h =h) %>%accuracy(out_s)
+a2[,c("RMSE","MAE","MAPE","MASE")]
+forecasts = forecast(fit_e,h=h)
+accuracy(forecasts,out_s)
+
+(2.2-3.5)/3.5
+(.94-1.1)/1.1
+(2.62-4.44)/4.44
+sarima_fit %>% forecast(h=h,level=95) %>% autoplot()
+sarima_fit %>% forecast(h=h,level=95)
+forecast_hw

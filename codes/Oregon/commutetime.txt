@@ -1,0 +1,7 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("OregonAverage_Commute_Times.csv", header=TRUE, sep=",", na.strings=" ")
+
+hist(all_data[,28])
+
+commute_reg2<-all_data[all_data$Region==2,28]
+hist(commute_reg2)

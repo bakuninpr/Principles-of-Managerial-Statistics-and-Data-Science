@@ -1,0 +1,11 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("leadsampling_2016.csv", header=TRUE, sep=",", na.strings=" ")
+all_data$Lead.Amount.ppb<-as.character(all_data$Lead.Amount.ppb)
+all_data[which(all_data$Lead.Amount.ppb=="<0.0500"),4]<-"0.05"
+all_data$Lead.Amount.ppb<-as.numeric(all_data$Lead.Amount.ppb)
+
+length(all_data[all_data$Partial.Postal.Code=="M6G",4])
+summary(all_data[all_data$Partial.Postal.Code=="M6G",4])
+
+length(all_data[all_data$Partial.Postal.Code=="M4L",4])
+summary(all_data[all_data$Partial.Postal.Code=="M4L",4])

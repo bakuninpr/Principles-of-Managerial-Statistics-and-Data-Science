@@ -1,0 +1,74 @@
+##############################################################################
+# The open source software R is used to obtain the murder rate in some 
+# police districts in LA. 
+
+# R o R Studio for Windows can be downloaded from
+# https://cran.r-project.org/bin/windows/base/ or https://www.rstudio.com/products/rstudio/download3/. 
+# Note that in addition to the crime data we need demographic 
+# data to calculate the murder statistics in Los Angeles.
+# This code runs in R 3.3.1 since September 16, 2017.In case of an error, 
+# verify your version of the data R, or packages since posible changes might have occured.
+
+# NOTE: Every line that begins with "#" the program detects it as a comment.
+
+# First, the required tools are prepared to work in the case study
+
+# A function will be created to install or load required packages for this application. The provided function is from: https://gist.github.com/stevenworthington/3178163
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+packages<-"data.table"
+ipak(packages) # install or load needed packages
+
+Year<-2010:2016
+Total<-c(3796292,3825393,3858137,3890436,3920173,3949149,3976322) #LA city pop estimates according to Vintage 2016 U.S. Census population estimates https://factfinder.census.gov/faces/tableservices/jsf/pages/productview.xhtml?src=bkmk
+d.demo<-data.frame(Year=Year,Total=Total)
+d.ic=fread("https://data.lacity.org/api/views/y8tr-7khq/rows.csv") #Upload to R the crime data
+
+
+colnames(d.ic)[9] <- 'Crime_Code_Description'
+colnames(d.ic)[3] <- 'Date.occurred'
+colnames(d.ic)[6] <- 'Area.Name' # I will not use area population, but this object could be useful in that case
+
+df.by.year= split(d.demo,f=d.demo$Year) # Create a series of lists which divide the data per year.
+
+# The crime of interest:
+#   Murders = "Criminal Homicide"                            Break-ins = "Escalamiento"
+
+# For this case study we are going to calculate the murder rates for 2014.
+# To obtain the rate for other crimes substitute the word "Criminal Homicide" below.
+x="Criminal Homicide" # Set the crime.
+
+# To obtain the results for another year, substitute "2014" for 2010, to 2016, in the following two lines.
+y=2014 # Set the date.
+demo.y <- as.data.frame(df.by.year$`2014`) # Create a database with the crimes for the selected year.
+
+# We define dates properly for R
+d.crime <- as.Date(d.ic$Date.occurred[agrep(pattern = x ,d.ic$Crime_Code_Description,ignore.case = TRUE)],"%m/%d/%Y")
+
+# Now turn the dates into a format that only contains years. 
+y.crime <- format(d.crime,format= "%Y")
+
+# Extracted the crimes and the police Area.Names to create a subset.
+cases <- d.ic$Crime_Code_Description[agrep(pattern = x ,d.ic$Crime_Code_Description,ignore.case=TRUE)]
+Area.Names <- d.ic$Area.Name[agrep(pattern = x , d.ic$Crime_Code_Description, ignore.case = TRUE)]
+
+# Created a subset of the data we want to analyze.
+ic.crime <-data.frame(Date=d.crime, Year=y.crime, Police.Area.Name=Area.Names, Crime=cases)
+
+# Subset crimes for year of interest.
+crime.y <- subset(ic.crime, Year==y)
+
+# Calculated the crime rate per Area.Name.
+dy <- table(crime.y$Police.Area.Name) # Create a table of the crimes in 2014.
+dy <- as.data.frame(dy) # Turn the table into a data base about crimes in 2014.
+
+
+ic.la.y <- sum(dy$Freq)/demo.y[1,2]*100000 # Calculate the rate of LA for the year 2014
+ic.la.y # Print the rate for all of LA city.
+
+# Created by: Angel Velazquez 

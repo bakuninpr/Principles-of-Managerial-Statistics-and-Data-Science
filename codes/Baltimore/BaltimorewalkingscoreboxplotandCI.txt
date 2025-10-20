@@ -1,0 +1,49 @@
+library(RSocrata)
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.table("Sustainability__2010-2012_.csv",sep=",",header=T)
+dat<-dat[-56,]
+#dat<-read.socrata("https://data.baltimorecity.gov/Neighborhoods/Sustainability-2010-2012-/3khh-rk6j",stringsAsFactors=T)
+boxplot(dat$wlksc11,ylab="Walk score")
+#Baltimorewalkingscore2011
+summary(dat$wlksc11)
+
+#95% confint
+
+# for relative frequency do
+h = hist(dat$wlksc11,plot=F,breaks="FD")
+h$density = h$counts/sum(h$counts)
+plot(h,freq=FALSE,xlab="Walking Score",ylab="Relative Frequency",main="",col="darkgray")
+
+library(ggplot2)
+ncl<-nclass.FD(dat$wlksc11)#nclass.Sturges(bstrap$t) #didn't like how Sturges looked
+p3<-ggplot(as.data.frame(dat$wlksc11), aes(x=dat$wlksc11)) + geom_histogram(bins=ncl)#qplot(.stdresid, data=myfortfit,geom="histogram")
+    p3<-p3+ylab("")+xlab('Walking Score')
+    p3<-p3+ggtitle('')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=20),axis.title=element_text(size=20))
+#Baltimorewalkingscore2011Hist
+
+qt(0.025,length(dat$wlksc11)) #df
+t.test(dat$wlksc11)$conf.int
+mean(dat$wlksc11)+qt(0.025,(length(dat$wlksc11)-1))*sd(dat$wlksc11)/sqrt(length(dat$wlksc11))
+
+
+((length(dat$wlksc11)-1)*var(dat$wlksc11))/qchisq(.975, df=(length(dat$wlksc11)-1))
+
+# data science part
+yn<-dat$wlksc11
+#yn<-yn[-which(is.na(yn)==T)]
+
+library(boot)
+pp <- function(x,i){
+y<-x[i] 
+sd(y)
+}
+bstrap<-boot(yn, pp, R = 50000)
+boot.ci(bstrap,conf=0.95,type="perc")
+
+ncl<-nclass.FD(bstrap$t)#nclass.Sturges(bstrap$t) #didn't like how Sturges looked
+p3<-ggplot(as.data.frame(bstrap$t), aes(x=bstrap$t)) + geom_histogram(bins=ncl)#qplot(.stdresid, data=myfortfit,geom="histogram")
+    p3<-p3+ylab("")+xlab('Resampled Standard Deviations')
+    p3<-p3+ggtitle('')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=20),axis.title=element_text(size=20))
+#Bootstrapwssd

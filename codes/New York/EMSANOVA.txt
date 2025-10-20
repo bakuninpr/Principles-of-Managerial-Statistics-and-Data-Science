@@ -1,0 +1,163 @@
+# interaction, two categorical variables with just two categories
+library(ggplot2) 
+library(dplyr) 
+tips <- read.csv("https://sebastiansauer.github.io/data/tips.csv")
+tips %>% 
+  ggplot() +
+  aes(x = sex, color = smoker, group = smoker, y = tip) +
+  stat_summary(fun.y = mean, geom = "point") +
+  stat_summary(fun.y = mean, geom = "line")
+  
+ #https://data.cityofnewyork.us/Public-Safety/EMS-Incident-Dispatch-Data/76xm-jjuj/data 
+#   library(data.table)
+#dat=fread("https://data.cityofnewyork.us/api/views/76xm-jjuj/rows.csv") #warning: this will take several minutes to run!
+
+setwd("C:/miscosas/empresas/notas30012/data")
+
+# WARNING: the raw dataset is large. Your computer needs enough memory to load the data. Also, it may take a few minutes to load. After the command below. Everything else 
+# will run rather quickly
+dat<-read.table("EMS_Incident_Dispatch_Data.csv",sep=",",header=T)
+
+#dat$Date <- format(as.POSIXct(strptime(format(dat$INCIDENT_DATETIME, format="%x %X"),"%d/%m/%Y %I:%M:%S %p",tz="")) ,format = "%d/%m/%Y")
+#checkt <- format(as.POSIXct(strptime(format(dat$INCIDENT_DATETIME, format="%x %X"),"%d/%m/%Y %I:%M:%S %p",tz="")) ,format = "%I:%M:%S %p")
+#dat$Time<-format(strptime(checkt, "%I:%M:%S %p"), "%H:%M:%S")
+
+#subset
+dat<-data.frame(dat)
+dat<-dat[,c("INCIDENT_DATETIME","INITIAL_CALL_TYPE",
+"DISPATCH_RESPONSE_SECONDS_QY","INCIDENT_RESPONSE_SECONDS_QY","BOROUGH",
+"INITIAL_SEVERITY_LEVEL_CODE","VALID_DISPATCH_RSPNS_TIME_INDC",
+"VALID_INCIDENT_RSPNS_TIME_INDC","INCIDENT_DISPOSITION_CODE")]
+
+dat$DISPATCH_RESPONSE_SECONDS_QY[which(dat$DISPATCH_RESPONSE_SECONDS_QY==0)]<-NA #eliminate zeros
+dat2<-na.omit(dat) #eliminate rows with missing values (on columns of interest)
+#rm(dat)
+
+who<-which(dat2$INCIDENT_DISPOSITION_CODE==87) #cancelled
+dat2<-dat2[-who,]
+
+who<-which(dat2$INITIAL_CALL_TYPE=="ARREFC"|dat2$INITIAL_CALL_TYPE=="ARREFT"|
+dat2$INITIAL_CALL_TYPE=="ARRESC"|dat2$INITIAL_CALL_TYPE=="ARREST")
+dat2<-dat2[who,]
+
+data.dup <- dat2[duplicated(dat2) | duplicated(dat2, fromLast = TRUE), ]
+dim(data.dup) #no duplicates!
+
+check <-as.POSIXct(strptime(format(dat2$INCIDENT_DATETIME, format="%x %X"),"%m/%d/%Y %I:%M:%S %p",tz=""))
+
+library(lubridate)
+dat2$timeint<-cut(hour(check), breaks = c(0, 6, 12, 18, 24), include.lowest = TRUE) 
+
+#write.table(dat2, file = "EMS_Incident_Dispatch_Data_PREPROCESSED.csv",sep=",") #created a first column of row numbers that I manually removed from csv
+
+setwd("C:/miscosas/empresas/notas30012/data")
+dat2<-read.table("EMS_Incident_Dispatch_Data_PREPROCESSED.csv",sep=",",header=T)
+
+
+
+print(levels(dat2$timeint))  ## This will show the levels of x are "Levels: a b c d e"
+
+## To reorder the levels:
+## note, if x is not a factor use levels(factor(x))
+dat2$timeintx = factor(dat2$timeint,levels(dat2$timeint)[c(4,3,1,2)])
+
+aggregate(DISPATCH_RESPONSE_SECONDS_QY ~ timeint, data = dat2, mean)
+aggregate(DISPATCH_RESPONSE_SECONDS_QY ~ timeint, data = dat2, sd)
+
+# observations per level
+library(dplyr)
+dat2 %>% 
+  group_by(timeint) %>%
+  summarise(no_rows = length(timeint))
+summary(dat2$timeint)
+
+library(ggplot2)
+p <- ggplot(dat2, aes(timeintx, DISPATCH_RESPONSE_SECONDS_QY)) #use timeint if using saved csv file
+p + geom_boxplot(outlier.colour = "red", outlier.shape = 1)+
+xlab('Time of Day')+ylab('Dispatch Response Time (sec)')+
+theme_bw()+theme(#plot.title = element_text(hjust = 0.5),#axis.line.y=element_blank(),
+          #axis.text.y=element_blank(),
+          #axis.ticks.y=element_blank(),
+          #axis.title.y=element_blank(),
+          #axis.title.x="Copper",
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+#dev.print(device=postscript, "boxplotTODdispatchresponseEMS.eps", onefile=FALSE, horizontal=FALSE)
+
+fit<-lm(DISPATCH_RESPONSE_SECONDS_QY~timeint,data=dat2)
+summary(fit)
+plot(fit)
+
+
+library(fortify)
+myfortfit<-fortify(fit)
+
+# USING RESIDUALS INSTEAD OF STD RESIDUALS FOR ANOVA. I INTRODUCE THE STD RESID IN 
+# THE SIMPLE LINEAR REG CHAPTER AND CAN USE .stdresid from fortify then
+# Homoscedasticity assumption
+p1<-ggplot(data = myfortfit, aes(x = .fitted, y = .resid)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point()+ylab('Residual')+xlab('Fitted Values')+
+  ggtitle('Residual vs Fitted')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7)) 
+
+
+
+# Normality assumption
+p2<-ggplot(data = myfortfit, aes(sample = .resid)) +
+  stat_qq() + ggtitle('Normal Probability Plot')+ #qq plot and normal probability plot are not the same thing
+  ylab('Sample Quantiles')+xlab('Theoretical Quantiles')+
+  geom_abline(colour = "firebrick3")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7))
+
+  ncl<-nclass.Sturges(fit$residuals)
+p3<-ggplot(myfortfit, aes(x=.resid)) + geom_histogram(bins=ncl)#qplot(.stdresid, data=myfortfit,geom="histogram")
+    p3<-p3+ylab("")+xlab('Residual')
+    p3<-p3+ggtitle('Histogram')+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size=7),axis.title=element_text(size=7))
+multiplot <- function(..., plotlist = NULL, file, cols = 1, layout = NULL) {
+  require(grid)
+
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  if (is.null(layout)) {
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+  if (numPlots == 1) {
+    print(plots[[1]])
+
+  } else {
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    for (i in 1:numPlots) {
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+multiplot(p2,p3,p1,cols=2)
+#dev.print(device=postscript, "diagnosticplotsTODdispatchresponseEMS.eps", onefile=FALSE, horizontal=FALSE)
+
+a1<-aov(DISPATCH_RESPONSE_SECONDS_QY~timeint,data=dat2)
+TukeyHSD(a1)   #to skewed to make sense to compare means
+
+
+
+summary(aov(DISPATCH_RESPONSE_SECONDS_QY~timeint*BOROUGH,data=dat2))
+
+aggregate(DISPATCH_RESPONSE_SECONDS_QY ~ timeint*BOROUGH, data = dat2, mean)
+aggregate(DISPATCH_RESPONSE_SECONDS_QY ~ timeint*BOROUGH, data = dat2, sd)
+
+a2<-aov(INCIDENT_RESPONSE_SECONDS_QY~timeint,data=dat2)  #this resp variable is more skewed
+TukeyHSD(a2)
+
+aggregate(INCIDENT_RESPONSE_SECONDS_QY ~ timeint, data = dat2, mean)

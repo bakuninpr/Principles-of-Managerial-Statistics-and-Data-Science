@@ -1,0 +1,16 @@
+setwd("C:/miscosas/empresas/Book30012/data")
+dat<-read.table("VitalSignsBaltimore15SUBSETforSLRdatascience.csv",sep=",",header=T)
+dat<-dat[-nrow(dat),]
+plot(dat[,2],dat[,3])
+fit<-lm(dat[,3]~dat[,2])
+summary(fit)
+confint(fit)
+
+plot(dat[,4],dat[,3])
+fit2<-lm(dat[,3]~dat[,4])
+summary(fit2)
+confint(fit2)
+
+fit2l<-lm(log(dat[,3])~log(dat[,4]))
+summary(fit2l)
+confint(fit2l)

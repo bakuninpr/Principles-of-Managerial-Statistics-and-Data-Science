@@ -1,0 +1,46 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.csv("2016_Community_Survey_Results_Chattanooga.csv",sep=",",header=T)
+dat_o<-dat[dat$Q19a..Do.you.own.a.business.in.Chattanooga.=="Yes",]
+table(dat_o$Q19..How.do.you.rate.Chattanooga.as.a.place.to.do.business.,
+dat_o$Q29..How.much.education.have.you.completed.)
+table(dat_o$Q19..How.do.you.rate.Chattanooga.as.a.place.to.do.business.,
+dat_o$Q13a..Affordability.)
+
+
+dat_o2<-subset(dat_o,select = c(Q19..How.do.you.rate.Chattanooga.as.a.place.to.do.business.,Q13a..Affordability.))
+summary(dat_o2)
+dat_o2[,1] = factor(dat_o2[,1],levels(dat_o2[,1])[c(7,4,5,2,6,3)])
+dat_o2[,2] = factor(dat_o2[,2],levels(dat_o2[,2])[c(7,4,3,5,6,2)])
+summary(dat_o2)
+table(dat_o2[,2],dat_o2[,1])#to have business environment by column
+
+fisher.test(table(dat_o2[,2],dat_o2[,1]),simulate.p.value=TRUE, B=100000) # not appropriate cuz marginal totals are not fixed
+
+
+
+#check need of dat_o3 below
+dat_o3<-droplevels(dat_o2)
+#dat_o3<-dat_o3[-which(dat_o3$Q13a..Affordability.==""),]
+table(dat_o3[,2],dat_o3[,1])
+dat_o3[,2]<-factor(dat_o3[,2]) #this will also eliminate very dissatisfied which was empty
+#dat_o3[,1] = factor(dat_o3[,1],levels(dat_o3[,1])[c(6,3,4,1,5,2)])
+#dat_o3[,2] = factor(dat_o3[,2],levels(dat_o3[,2])[c(5,3,2,4,1)])
+tbl<-table(dat_o3$Q13a..Affordability.,dat_o3$Q19..How.do.you.rate.Chattanooga.as.a.place.to.do.business.)
+it<-chisq.test(tbl)
+it$expected
+
+#combine levels
+levels(dat_o3[,1])[levels(dat_o3[,1])%in%c("Neutral","Bad","Very Bad")] <- "Neutral"
+tbl<-table(dat_o3$Q13a..Affordability.,dat_o3$Q19..How.do.you.rate.Chattanooga.as.a.place.to.do.business.)
+it<-chisq.test(tbl)
+it$expected
+
+#combine levels
+levels(dat_o3[,2])[levels(dat_o3[,2])%in%c("Somewhat Dissatisfied","Neutral")] <- "Neutral"
+dat_o3<-dat_o3[-which(dat_o3[,1]=="Don't Know"),]
+dat_o3[,1]<-factor(dat_o3[,1])
+tbl<-table(dat_o3$Q13a..Affordability.,dat_o3$Q19..How.do.you.rate.Chattanooga.as.a.place.to.do.business.)
+it<-chisq.test(tbl)
+it$expected
+it$observed
+

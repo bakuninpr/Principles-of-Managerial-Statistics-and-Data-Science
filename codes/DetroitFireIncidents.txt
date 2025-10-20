@@ -1,0 +1,2 @@
+datadet<-read.socrata("https://data.detroitmi.gov/Public-Safety/2015-Fire-Data/g7tj-vvtd",stringsAsFactors=T)
+table(datadet$INCIDENT.TYPE.CATEGORY)

@@ -1,0 +1,66 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+#total sales (in dollars) since market open -excludes usable marijuana
+all_data<-read.csv("Marijuana_Sales_w_Weight_Daily.csv", header=TRUE, sep=",", na.strings=" ")
+
+mj_inh<-all_data[all_data$Type=="Marijuana Extract for Inhalation",]
+mj_inh$Sales.Date<-as.Date(mj_inh$Sales.Date, format="%m/%d/%Y")
+mj_inh2<-mj_inh[order(mj_inh$Sales.Date),]
+mo<-months(mj_inh2$Sales.Date)
+yr<-substring(mj_inh2$Sales.Date,1,4)
+
+aug_mj_inh17<-mj_inh2[mo=="August" &yr=="2017",]
+aug_mj_inh16<-mj_inh2[mo=="August" &yr=="2016",]
+m16<-aug_mj_inh16[,5]/aug_mj_inh16[,4]
+m17<-aug_mj_inh17[,5]/aug_mj_inh17[,4]
+
+ t.test(m16,m17,alternative="greater",conf.level=.01) #t.test(m16,m17,alternative="greater",conf.level=.01,var.equal=T)
+
+
+# two way anova
+
+all_data$Sales.Date<-as.Date(all_data$Sales.Date, format="%m/%d/%Y")
+all_data2<-all_data[order(all_data$Sales.Date),]
+mo_a<-months(all_data2$Sales.Date)
+yr_a<-substring(all_data2$Sales.Date,1,4)
+aug_mj1716<-all_data2[mo_a=="August" &(yr_a=="2017"|yr_a=="2016"),]
+salesperunit_a<-aug_mj1716[,5]/aug_mj1716[,4]
+
+yr_a2<-substring(aug_mj1716$Sales.Date,1,4)
+summary(aov(salesperunit_a~aug_mj1716[,1]*yr_a2))
+
+fit<-lm(salesperunit_a~aug_mj1716[,1]*yr_a2)
+ summary(fit)
+anova(fit)
+
+library(ggplot2);library(dplyr)
+dat<-data.frame(A=aug_mj1716[,1],B=as.factor(yr_a2),y=salesperunit_a)
+p1<-dat %>% 
+  ggplot() +  
+  aes(x = A, color = B, group = B, y = y) + xlab('Factor A')+ylab('Y')+
+  labs(color="Factor B")+  ggtitle("Scenario 1")+
+  stat_summary(fun.y = mean, geom = "point") +
+  stat_summary(fun.y = mean, geom = "line") +theme_bw()+  
+  theme(plot.title = element_text(hjust = 0.5),#axis.line.y=element_blank(),
+          #axis.text.y=element_blank(),
+          #axis.ticks.y=element_blank(),
+          #axis.title.y=element_blank(),
+          #axis.title.x="Copper",
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+p1
+boxplot(y~A,data=dat)
+
+
+
+# time series
+inds <- seq(as.Date("2014-06-01"), as.Date("2015-10-14"), by = "day")
+
+## Create a time series object
+salesperunit<-mj_inh2[,5]/mj_inh2[,4]
+myts <- ts(salesperunit,     # random data
+           start = c(2014, as.numeric(format(min(mj_inh[,2]), "%j"))),
+           frequency = 365)
+plot(decompose(myts)) 
+boxplot(salesperunit~months(mj_inh[,2]),las=2) # note that data does not have equal variance

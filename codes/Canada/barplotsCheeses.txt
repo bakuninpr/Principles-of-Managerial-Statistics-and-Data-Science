@@ -1,0 +1,49 @@
+
+setwd("C:/miscosas/empresas/notas30012/data")
+dat<-read.csv("canadianCheeseDirectory.csv",sep=",",header=T)
+
+table(dat$CategoryTypeEn)
+dat2<-dat[!(is.na(dat$CategoryTypeEn) | dat$CategoryTypeEn==""), ]
+dat_cat<-dat2$CategoryTypeEn
+dat_cat<-droplevels(dat_cat)
+
+fi<-summary(dat_cat)[1]/sum(table(dat_cat))
+fr<-summary(dat_cat)[2]/sum(table(dat_cat))
+ha<-summary(dat_cat)[3]/sum(table(dat_cat))
+ss<-summary(dat_cat)[4]/sum(table(dat_cat))
+so<-summary(dat_cat)[5]/sum(table(dat_cat))
+ve<-summary(dat_cat)[6]/sum(table(dat_cat))
+G<-c("Firm","Fresh","Hard","Semi-soft","Soft","Veined")
+tt<-cbind(G,c(fi,fr,ha,ss,so,ve))
+colnames(tt)<-c("Type","rF")
+ tt<-data.frame(tt)
+tt[,2]<-as.numeric(as.character(tt[,2]))
+library(ggplot2)
+ggplot(data=tt, aes(x=Type, y=rF)) +
+  geom_bar(stat="identity", position=position_dodge(), colour="black") + theme_classic()+ #theme_bw() +
+  xlab('') + ylim(0,1)+
+  ylab('Relative Frequency') + #ggtitle('New Students per Business Program')+ 
+  theme(axis.text.x = element_text(colour="grey20",size=12,angle=90,hjust=.5,vjust=.5,face="plain"))
+
+#dev.print(device=postscript, "CanadianCheese.eps", onefile=FALSE, horizontal=FALSE)
+
+# Organic influence?
+library(reshape)
+library(plyr)
+df1 <- melt(ddply(dat2,.(Organic),function(x){prop.table(table(x$CategoryTypeEn))}),id.vars = 1)
+df2<-df1[-c(1,2),]
+df2[,1]<-as.factor(df2[,1])
+levels(df2[,1])
+levels(df2[,1]) <- c("No", "Yes")
+ggplot(df2, aes(x = variable,y = value)) +
+    facet_wrap(~Organic, nrow=2, ncol=1) +
+    geom_bar(stat = "identity")+xlab('')+ylab('Relative Frequency')
+
+#ggplot(df2, aes(variable, value)) + 
+#  geom_bar(aes(fill = Organic), stat = "identity", position = "dodge")
+
+#dev.print(device=postscript, "CanadianCheeseO.eps", onefile=FALSE, horizontal=FALSE)
+
+
+# contingency table
+addmargins(table(dat2$Organic,dat2$CategoryTypeEn))

@@ -1,0 +1,66 @@
+#setwd("C:/miscosas/empresas/2014-15/agosto/esta6005/casestudies")
+setwd("C:/miscosas/empresas/Book30012/data")
+all_data<-read.csv("vehicle_stops_2016_datasd.csv", header=TRUE, sep=",", na.strings=" ")
+all_data<-all_data[all_data$stop_cause=="Moving Violation",]
+
+
+
+library(reshape2)
+all_data2<-all_data[,c("subject_race","subject_sex","searched")]
+
+all_data2$subject_race<-as.factor(all_data2$subject_race)
+all_data2$subject_sex<-as.factor(all_data2$subject_sex)
+all_data2$searched<-as.factor(all_data2$searched)
+
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("A","C","D","F","G","J","K","L","V")] <- "A"
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("I","O","P","S","U","X","Z")] <- "O"
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("A")] <- "Asian"
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("B")] <- "Black"
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("H")] <- "Hispanic"
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("O")] <- "Other"
+levels(all_data2$subject_race)[levels(all_data2$subject_race)%in%c("W")] <- "White"
+levels(all_data2$subject_sex)[levels(all_data2$subject_sex)%in%c(" ","X")] <- " "
+levels(all_data2$searched)[levels(all_data2$searched)%in%c("N","n")] <- "No"
+levels(all_data2$searched)[levels(all_data2$searched)%in%c("Y")] <- "Yes"
+levels(all_data2$searched)[levels(all_data2$searched)%in%c("\\"," ")] <- " "
+all_data2$subject_race[grepl("^\\s*$", all_data2$subject_race)] <- NA
+all_data2$subject_sex[grepl("^\\s*$", all_data2$subject_sex)] <- NA
+all_data2$searched[grepl("^\\s*$", all_data2$searched)] <- NA
+all_data2 <- droplevels(all_data2[!grepl("^\\s*$", all_data2$subject_race),,drop=FALSE] )
+summary(all_data2)
+
+library(ggplot2)
+ g<-ggplot(data=all_data2, aes(subject_sex))
+g+geom_bar()
+
+ g<-ggplot(data=all_data2, aes(subject_race))
+g+geom_bar()
+
+all_data3<-subset(all_data2, !is.na(subject_race))
+all_data3<-subset(all_data3, !is.na(subject_sex))
+all_data3<-subset(all_data3, !is.na(searched)) # I can comment this line out if I want search NA stacks. % of NA seems to be constant bw races/genders
+theTable <- within(all_data3, 
+                   subject_race <- factor(subject_race, 
+                                      levels=names(sort(table(subject_race), 
+                                                        decreasing=TRUE))))
+levels(theTable$subject_sex)[levels(theTable$subject_sex)%in%c("F","M")] <- c("Female","Male")
+ggplot(theTable, aes(x=subject_race, fill = searched)) +
+    #geom_bar(position = "stack", stat = "identity") +
+    geom_bar()+facet_wrap( ~ subject_sex)+xlab("Race") + ylab("Count") + #ggtitle("Vehicle Stops in San Diego")+
+theme(axis.line.y=element_blank(),
+          #axis.text.y=element_blank(),
+          #axis.ticks.y=element_blank(),
+          #axis.title.y=element_blank(),
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())+
+scale_fill_manual("legend", values = c("N" = "darkgoldenrod1", "Y" = "indianred4"))+
+guides(fill=guide_legend(title="Searched"))
+
+library(dplyr)
+check<-all_data3 %>% count(subject_race, subject_sex, searched) %>%    # Group by region and species, then count number in each group
+         mutate(pct=n/sum(n),               # Calculate percent within each region
+                ypos = cumsum(n) - 0.5*n)
+print(tbl_df(check),n=30)
+summary(all_data3$subject_sex) # to check prob chapter totals by gender

@@ -1,0 +1,39 @@
+library(RSocrata)
+rawData<-read.socrata("https://data.fortworthtexas.gov/Public-Safety/Vehicle-Accident-Data/kr8h-9zxd")
+library(tidyr)
+rawData <- separate(data = rawData,
+                    col = Crash.Date.Time,
+                    into = c('Date', 'Time'),
+                    sep = ' ',
+                    remove = F)
+
+rawData <- separate(data = rawData,
+                    col = Date,
+                    into = c('Month', 'Date', 'Year'),
+                    sep = '/',
+                    remove = F)
+
+rawData <- separate(data = rawData,
+                    col = Time,
+                    into = c('Hour', 'Minute'),
+                    sep = ':',
+                    remove = F)
+
+
+rawData$DateTime <- paste(
+  paste(rawData$Month,
+        rawData$Day,
+        rawData$Year,
+        sep = '/'),
+  paste(rawData$Hour,
+        rawData$Min,
+        sep = ":"),
+  sep = ", "
+)
+
+#' 
+#' And check:
+#' 
+## ----echo = T------------------------------------------------------------
+# - Check Data Set:
+kable(table(rawData$Year, rawData$Month))

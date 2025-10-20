@@ -1,0 +1,18 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+dat2<-read.table("CMPD_Employee_Demographics.csv",sep=",",header=T)
+fF<-summary(dat2$Gender)[1]/(summary(dat2$Gender)[1]+summary(dat2$Gender)[2])
+fM<-summary(dat2$Gender)[2]/(summary(dat2$Gender)[1]+summary(dat2$Gender)[2])
+G<-c("Female","Male")
+tt<-cbind(G,c(fF,fM))
+#tt[,2]<-as.numeric(as.character(tt[,2]))
+colnames(tt)<-c("Gender","rF")
+ tt<-data.frame(tt)
+tt[,2]<-as.numeric(as.character(tt[,2]))
+library(ggplot2)
+ggplot(data=tt, aes(x=Gender, y=rF)) +
+  geom_bar(stat="identity", position=position_dodge(), colour="black") + theme_classic()+ #theme_bw() +
+  xlab('') + ylim(0,1)+
+  ylab('Relative Frequency') + #ggtitle('New Students per Business Program')+ 
+  theme(axis.text.x = element_text(colour="grey20",size=12,angle=90,hjust=.5,vjust=.5,face="plain"))
+
+#dev.print(device=postscript, "Charlottebarplot.eps", onefile=FALSE, horizontal=FALSE)

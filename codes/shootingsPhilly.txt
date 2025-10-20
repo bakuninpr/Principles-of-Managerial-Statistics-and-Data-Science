@@ -1,0 +1,20 @@
+#setwd("C:/miscosas/empresas/2014-15/agosto/esta6005/casestudies")
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("shootingsPhilly.csv", header=TRUE, sep=",", na.strings=" ")
+
+all_dataf<-all_data[,-c(21:23)]
+
+#there appears to be no duplicates
+data.dup <- all_dataf[duplicated(all_dataf) | duplicated(all_dataf, fromLast = TRUE), ] #empty
+d15<-all_data[which(all_data$year==2015),]
+
+d16<-all_data[which(all_data$year==2016),]
+
+summary(as.factor(d15$fatal)) #rm -1
+summary(as.factor(d16$fatal)) #rm -1
+
+d15<-d15[-which(d15$fatal==-1),]
+d16<-d16[-which(d16$fatal==-1),]
+
+prop.test(c(227,212),c((227+1024),(212+1082)),correct=FALSE) #p15-p16. no continuity correction
+prop.test(c(227,212),c((227+1024),(212+1082)),correct=T)

@@ -1,0 +1,68 @@
+##############################################################################
+# We use the open source software for statistical analysis called R to asess
+# the relationship of fat % and moisture content by cheese type 
+# R or RStudio for Windows can be downloaded at 
+# https://cran.r-project.org/bin/windows/base/ or https://www.rstudio.com/products/rstudio/download3/
+# This code ran on R 3.3.1 February, 4, 2017. 
+#
+#
+# If an error shows while running this code, verify the version of your data, R, 
+# and necessary packages since changes in these may have occured.
+# Also keep in mind that access to the internet is required to extract the data
+# Created by Roberto Rivera, roberto.rivera30@upr.edu
+
+#NOTE: Each line that starts with "#" R detects it as a comment.
+# Download CSV file from http://open.canada.ca/data/en/dataset/3c16cd48-3ac3-453f-8260-6f745181c83b
+dat<-read.csv("canadianCheeseDirectory.csv",sep=",",header=T)
+library(ggplot2)
+table(dat$CategoryTypeEn)
+dat2<-dat[!(is.na(dat$CategoryTypeEn) | dat$CategoryTypeEn==""), ]
+#scatterplot on fat vs moisture
+# Scatter plot
+levels(dat2$CategoryTypeEn)<-c("","Firm","Fresh","Hard","Semi-soft","Soft","Veined")
+sp<-ggplot(dat2, aes(x=MoisturePercent, y=FatContentPercent, 
+color=CategoryTypeEn)) + geom_point() +xlab('Moisture (%)')+ylab('Fat (%)')+
+guides(color=guide_legend(title="Cheese Type"))+
+scale_color_manual(values= c("blue", "red","yellow","green","black","purple")) +
+theme(axis.line.y=element_blank(),
+          axis.title=element_text(size=14),legend.title=element_text(size=14),
+          legend.text=element_text(size=14),axis.ticks = element_blank(),
+          #axis.ticks.y=element_blank(),
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+ sp
+#dev.print(device=postscript, "CanadianCheesescatterplotcolor.eps", onefile=FALSE, horizontal=FALSE)
+
+sp2 <- ggplot(data = dat2, aes(x = MoisturePercent, y = FatContentPercent)) + geom_point() +
+    stat_smooth(method = "lm", se = FALSE) + 
+facet_wrap(~CategoryTypeEn)+xlab('Moisture (%)')+ylab('Fat (%)')+
+theme(axis.line.y=element_blank(),
+strip.text.x = element_text(size = 14),          
+axis.title=element_text(size=14),legend.title=element_text(size=14),
+          legend.text=element_text(size=14),axis.ticks = element_blank(),
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+#dev.print(device=postscript, "CanadianCheesescatterplotpanel.eps", onefile=FALSE, horizontal=FALSE)
+
+sp3<-ggplot(dat2, aes(x=MoisturePercent, y=FatContentPercent, 
+color=as.factor(Organic))) + geom_point() +
+xlab('Moisture (%)')+ylab('Fat (%)')+
+guides(color=guide_legend(title="Organic"))+
+scale_color_manual(labels = c("No", "Yes"),values= c("blue", "red")) +
+theme(axis.line.y=element_blank(),
+          axis.title=element_text(size=14),legend.title=element_text(size=14),
+          legend.text=element_text(size=14),axis.ticks = element_blank(),
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+ sp3
+#dev.print(device=postscript, "CanadianCheesescatterplotcolorOrganic.eps", onefile=FALSE, horizontal=FALSE)
+
+
+
+

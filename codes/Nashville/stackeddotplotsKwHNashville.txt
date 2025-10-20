@@ -1,0 +1,23 @@
+# This dataset uses different customer types pre august 2015. Thus I only use more recent data!!
+library(RSocrata)
+dat<-read.socrata("https://data.nashville.gov/Energy-Usage/NES-Monthly-Energy-Consumption-by-Customer-Type-an/vbx7-mn5i",stringsAsFactors=T)
+who<-which(dat$Year==2017&dat$Month==2) #February 2017 data
+dat2<-dat[who,]
+
+dat2$Customer.Type<-factor(dat2$Customer.Type)#to drop empty levels
+
+dat2$Monthly.KWH.Used<-dat2$Monthly.KWH.Used/1000000
+ggplot(dat2, aes(x=Monthly.KWH.Used)) +
+   geom_dotplot(binwidth=1,dotsize=0.5) +
+   theme_bw() + xlab('Total KwH used per Zip code (in millions)') + 
+   facet_wrap(~ factor(Customer.Type), ncol=1) +
+theme(axis.line.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          axis.title.y=element_blank(),
+          #axis.title.x="Copper",
+          panel.grid.minor.y=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.minor.x=element_blank(),
+          panel.grid.major.x=element_blank())
+#dev.print(device=postscript, "stackeddotplotKwH.eps", onefile=FALSE, horizontal=FALSE)

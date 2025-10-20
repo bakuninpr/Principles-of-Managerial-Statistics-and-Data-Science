@@ -1,0 +1,33 @@
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+# Now we check if the data.table and other packages are installed on the computer. If not, ipak installs them and makes them available. Otherwise, it just makes them available
+packages <- c("data.table","zoo","xts") # este paquete se usa para cargar la data de data.pr.gov al programa R
+ipak(packages) #install or load necessary packages
+
+d.ic=fread("https://data.sfgov.org/api/views/mwjb-biik/rows.csv")
+d.ic$Month<-as.POSIXct(d.ic$Month, format="%m/%d/%Y")
+d.ic$Svc<-as.numeric(unlist(strsplit(d.ic$Svc, split='%', fixed=TRUE)))
+
+ 
+
+
+x <- xts(d.ic$Svc,d.ic$Month)
+y <- xts(d.ic$Calls,d.ic$Month)
+par(mfrow=c(3,1))
+plot(x,auto.grid=F,minor.ticks=F,las=2,col="red",main="",ylab="Percentage of Calls",cex.axis=0.9)
+plot(y/1000,auto.grid=F,minor.ticks=F,las=2,col="blue",main="",ylab="Monthly calls (in thousands)",cex.axis=0.9)
+par(mar = c(5, 4, 4, 4) + 0.3)  # Leave space for z axis
+plot(x,auto.grid=F,minor.ticks=F,las=2,col="red",main="",ylab="Percentage of Calls",cex.axis=0.9)
+par(new = TRUE)
+plot(y/1000,auto.grid=F,minor.ticks=F,col="blue",axes=F,bty="n",xlab="",main="")
+axis(side=4, at = pretty(range(d.ic$Calls/1000)),cex.axis=0.9)
+mtext("Monthly calls (in thousands)", side=4, line=3,cex=0.65)
+#dev.print(device=postscript, "linechartssf311.eps", onefile=FALSE, horizontal=FALSE)
+
+
+

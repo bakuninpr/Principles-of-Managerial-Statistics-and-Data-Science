@@ -1,0 +1,21 @@
+packages <- c("tm", "wordcloud", "RSocrata")
+ipak(packages)
+data <- read.socrata("https://data.nashville.gov/Business-Development-Housing/Property-Standards-Violations/479w-kw2x",stringsAsFactors=T)
+names(data)
+incident <- data[,10]
+#levels(incident)
+dataCorpus <- Corpus(VectorSource(incident))
+dataCorpus<- tm_map(dataCorpus, content_transformer(tolower))
+dataCorpus <- tm_map(dataCorpus, removeWords, stopwords('english'))
+dataCorpus <- tm_map(dataCorpus, removePunctuation)
+ wordcloud(dataCorpus, max.words = 200, random.order = FALSE, colors=brewer.pal(12,"Paired"), use.r.layout=FALSE, scale=c(3, .5))
+#dev.print(device=postscript, "wordcloudNashville.eps", onefile=FALSE, horizontal=FALSE)
+
+
+dtm <- TermDocumentMatrix(dataCorpus)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+barplot(d[1:10,]$freq, las = 2, names.arg = d[1:10,]$word,
+        col ="lightgray", main ="Most frequent words",
+        ylab = "Word frequencies",ylim=c(0,10000),cex.axis=0.5)

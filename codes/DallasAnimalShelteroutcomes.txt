@@ -1,0 +1,2 @@
+datd<-read.socrata("https://www.dallasopendata.com/City-Services/Dallas-Animal-Shelter-Data/sjyj-ydcj",stringsAsFactors=T)
+barplot(table(datd$Outcome.Type),cex.names=0.5,las=2)

@@ -1,0 +1,59 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("New_York_City_Leading_Causes_of_Death.csv", header=TRUE, sep=",", na.strings=" ")
+
+#line chart problems
+all_data2<-all_data[all_data$Sex=="F",]
+all_data2<-all_data2[all_data2$Race.Ethnicity=="White Non-Hispanic",]
+all_data2<-all_data2[all_data2$Leading.Cause=="Cerebrovascular Disease (Stroke: I60-I69)",]
+all_data2<-all_data2[ order(all_data2$Year), ]
+all_data2$Death.Rate<-as.numeric(as.character(all_data2$Death.Rate))
+plot(all_data2$Year,all_data2$Death.Rate,type="l")
+
+all_data2m<-all_data[all_data$Sex=="M",]
+all_data2m<-all_data2m[all_data2m$Race.Ethnicity=="White Non-Hispanic",]
+all_data2m<-all_data2m[all_data2m$Leading.Cause=="Cerebrovascular Disease (Stroke: I60-I69)",]
+all_data2m<-all_data2m[ order(all_data2m$Year), ]
+all_data2m$Death.Rate<-as.numeric(as.character(all_data2m$Death.Rate))
+plot(all_data2m$Year,all_data2m$Death.Rate,type="l")
+
+
+
+# t test example
+all_data3<-all_data[all_data$Sex=="F",]
+all_data3<-all_data3[all_data3$Race.Ethnicity=="Asian and Pacific Islander",]
+all_data3<-all_data3[all_data3$Leading.Cause=="Intentional Self-Harm (Suicide: X60-X84, Y87.0)",]
+all_data3<-all_data3[ order(all_data3$Year), ]
+all_data3$Death.Rate<-as.numeric(as.character(all_data3$Death.Rate))
+plot(all_data3$Year,all_data3$Death.Rate,type="l")
+
+
+
+all_data3m<-all_data[all_data$Sex=="M",]
+all_data3m<-all_data3m[all_data3m$Race.Ethnicity=="Asian and Pacific Islander",]
+all_data3m<-all_data3m[all_data3m$Leading.Cause=="Intentional Self-Harm (Suicide: X60-X84, Y87.0)",]
+all_data3m<-all_data3m[ order(all_data3m$Year), ]
+all_data3m$Death.Rate<-as.numeric(as.character(all_data3m$Death.Rate))
+plot(all_data3m$Year,all_data3m$Death.Rate,type="l")
+t.test(all_data3m$Death.Rate,all_data3$Death.Rate)
+t.test(all_data3m$Death.Rate,all_data3$Death.Rate,var.equal=T)
+
+# t test problem
+all_data3<-all_data[all_data$Sex=="F",]
+all_data3<-all_data3[all_data3$Race.Ethnicity=="White Non-Hispanic",]
+all_data3<-all_data3[all_data3$Leading.Cause=="Chronic Lower Respiratory Diseases (J40-J47)",]
+all_data3<-all_data3[ order(all_data3$Year), ]
+all_data3$Death.Rate<-as.numeric(as.character(all_data3$Death.Rate))
+all_data3$Age.Adjusted.Death.Rate<-as.numeric(as.character(all_data3$Age.Adjusted.Death.Rate))
+plot(all_data3$Year,all_data3$Death.Rate,type="l")
+
+
+
+all_data3m<-all_data[all_data$Sex=="M",]
+all_data3m<-all_data3m[all_data3m$Race.Ethnicity=="White Non-Hispanic",]
+all_data3m<-all_data3m[all_data3m$Leading.Cause=="Chronic Lower Respiratory Diseases (J40-J47)",]
+all_data3m<-all_data3m[ order(all_data3m$Year), ]
+all_data3m$Death.Rate<-as.numeric(as.character(all_data3m$Death.Rate))
+all_data3m$Age.Adjusted.Death.Rate<-as.numeric(as.character(all_data3m$Age.Adjusted.Death.Rate))
+plot(all_data3m$Year,all_data3m$Death.Rate,type="l")
+t.test(all_data3m$Death.Rate,all_data3$Death.Rate)
+t.test(all_data3m$Age.Adjusted.Death.Rate,all_data3$Age.Adjusted.Death.Rate)

@@ -1,0 +1,3 @@
+#in problem in book, I am intentionally leaving out that quarterly data was used to determine mean to imply that daily data was used (and hence mean calculated is a parameter)
+inmates<-c(2985,3115,3104,2946,2945,2706,2571,2364,2259,2315,2391,2224,2050,2068,2101,2028,1919,1813,1811,1801,1688,1524,1470,1485,1529,1512)
+mean(inmates)

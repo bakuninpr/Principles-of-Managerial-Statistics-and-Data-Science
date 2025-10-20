@@ -1,0 +1,120 @@
+library(tidyverse)
+library(ggplot2)
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("CO_mj_gross_sales.csv", header=TRUE, sep=",", na.strings=" ")
+
+
+# update with new data from dashboard
+y<-c(rep(2018,12),rep(2018,6))
+M<-c("OCTOBER  ", "OCTOBER  ", "NOVEMBER ", "NOVEMBER ", "DECEMBER ", "DECEMBER ",
+"JANUARY  ", "JANUARY  ", "FEBRUARY ", "FEBRUARY ", "MARCH    ", "MARCH    ", 
+"APRIL    ", "APRIL    ","MAY      ", "MAY      ", "JUNE     ", "JUNE     ")
+g<-c(rep(c("Medical Total Gross Sales", "Retail Total Gross Sales"),9))
+s<-c(18233014,35231373)
+s2<-c(17355123,33832964,15773890,31356238,15222795,32706909,
+14072795,29455423,12025370,27832113,13675836,34738044,
+12580027,33891497,12223151,31713216,12245753,32638898)
+
+all_data[1,4]<-s[1]
+all_data[2,4]<-s[2]
+all_data<-all_data[nrow(all_data):1,]
+all_data$MONTH<-as.character(all_data$MONTH)
+all_data$GROSS_SALES_TYPE<-as.character(all_data$GROSS_SALES_TYPE)
+all_data2<-data.frame(Year=c(all_data$YEAR,y),MONTH=c(all_data$MONTH,M),
+GROSS_SALES_TYPE=c(all_data$GROSS_SALES_TYPE,g),
+GROSS_SALES=c(all_data$GROSS_SALES,s2))
+
+all_data<-all_data2
+
+
+dat<-all_data[all_data$GROSS_SALES_TYPE=="Retail Total Gross Sales",]
+#dat<-dat[nrow(dat):1,]
+dat<-dat%>%mutate(date=seq(as.Date("2014/1/1"), as.Date("2018/6/1"), "months"))
+plot(dat[,4],type="l")
+boxplot(GROSS_SALES~MONTH,data=dat,las=2)
+plot(decompose(ts(dat[,4],freq=12)))
+
+#line chart problem Ch 3?
+p1 <- qplot(date, GROSS_SALES, data=dat, geom = "line")+
+scale_x_date(date_labels = "%b-%y", date_breaks = "1 months",
+limits = as.Date(c('2014/1/1','2018/6/1'))) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+axis.title=element_text(size=14)) + 
+  ylab("Gross Sales") + xlab("Date")
+#linechartMJ
+
+library(ggseas)
+p2<-ggsdc(dat, aes(x = date, y = GROSS_SALES), frequency=12,method = "decompose",
+facet.titles = c("Observed",
+  "Trend", "Seasonal", "Irregular")) + geom_line()+
+ylab('')+xlab('Time')+
+theme(strip.text.x = element_text(size = 14),
+axis.text.x = element_text(angle = 90, hjust = 1))+
+scale_x_date(date_labels = "%b %y", date_breaks = "1 months")
+#prelimMJdecomp
+
+
+
+##### FORECASTS
+h<-6
+library(lubridate)#ymd
+dat2<-dat%>%filter(date <=ymd("2017-12-01")) #drop last six months
+library(forecast)
+forecast_snaive<-snaive(dat2$GROSS_SALES,h=h)# can use as benchmark to compare other models w MASE
+# Holt- Winter method (see Chatfield pg 78 and pg 20
+# since seasonality does not appear to increase with trend the additive seasonality HW model appears appropriate
+# other_hw<-hw(tur2,h=12) #using forecast library. slightly diff results than below
+
+gs<-ts(dat2$GROSS_SALES,freq=12,start = c(2014, 1))
+fit_e<-ets(gs) #ETS(M,A,M) model, multiplicative seasonal and error model (with trend and seasonal smoothing parameter estimates being very small), suggested: see pdfpg 69 Hyndman and Koehler
+ fit_hw2 <- hw(gs, seasonal = "additive") #if seasonality effect increases with mean I should use multiplicative. If gamma and beta are false it will do Exponential Smoothing. See Chatfield pg 78
+fit_hw <- hw(gs, seasonal = "multiplicative")
+ 
+hist(resid(fit_hw)) # for positive skew (right skew), an inverse transformation would be appropriate
+boxplot(resid(fit_hw))
+
+(lambda <- BoxCox.lambda(gs)) #transformation with lambda =-1 suggested
+
+fit_hw3 <- hw(gs, seasonal = "additive",lambda=-1) #does not seem to be applying tranf right
+
+1/(accuracy(fit_hw3)) #additive rmse better than for multiplicative model and fit_hw3
+#fit_hw ; fit_hw$coef ; fit_hw$SSE
+forecast_hw <- predict(fit_hw, h, prediction.interval = TRUE)
+out_s<-dat%>%filter(date >ymd("2017-12-01"))
+out_s<-out_s$GROSS_SALES
+
+
+#SARIMA
+acf(gs,lag=36)
+pacf(gs,lag=36)
+
+#lgs<-log(gs)
+#acf(lgs,lag=36)
+#pacf(lgs,lag=36)
+#acf(diff(lgs,12),lag=36)
+#pacf(diff(lgs,12),lag=36)
+meh2<-gs %>% diff(lag=12)%>%diff(lag=12)%>%diff()#had to do two seasonal differences?
+acf(meh2,lag=36)
+pacf(meh2,lag=36)
+sarima_fit <- Arima(gs, order=c(0,1,0), seasonal=c(0,1,1))
+sarima_fit2 <- Arima(gs, order=c(1,0,2), seasonal=c(1,1,0))#,lambda=0
+#sarima_fit has lower aic
+auto.arima(gs, stepwise=FALSE, approximation=FALSE)#our model has better aic
+tsdiag(sarima_fit, gof.lag=48)
+acf(resid(sarima_fit),lag=36)
+pacf(resid(sarima_fit),lag=36)
+sarima_fit_pred = predict(sarima_fit, n.ahead=h)
+
+
+#### out of sample (test set)
+accuracy(rep(mean(gs),6),out_s,)
+accuracy(forecast_snaive,out_s,)
+sarima_fit %>% forecast(h=h,level=95) %>% autoplot()
+a1 <- sarima_fit %>% forecast(h =h) %>%accuracy(out_s)
+a1[,c("RMSE","MAE","MAPE","MASE")]
+a2 <- fit_hw %>% forecast(h =h) %>%accuracy(out_s)
+a2[,c("RMSE","MAE","MAPE","MASE")]
+forecasts = forecast(fit_e,h=6)
+accuracy(forecasts,out_s)
+
+

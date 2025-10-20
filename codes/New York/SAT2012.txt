@@ -1,0 +1,22 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("NYC2012_SAT_Results.csv", header=TRUE, sep=",", na.strings=" ")
+
+w<-which(all_data$SAT.Math.Avg..Score=="s"|all_data$Num.of.SAT.Test.Takers=="s")
+dat<-all_data[-w,]
+dat$SAT.Math.Avg..Score<-as.numeric(as.character(dat$SAT.Math.Avg..Score))
+dat$Num.of.SAT.Test.Takers<-as.numeric(as.character(dat$Num.of.SAT.Test.Takers))
+w<-which(dat$Num.of.SAT.Test.Takers<30)
+dat2<-dat[-w,]
+
+all_tot<-dat2$Num.of.SAT.Test.Takers*dat2$SAT.Math.Avg..Score
+n<-sum(dat2$Num.of.SAT.Test.Takers)
+all_m<-sum(dat2$Num.of.SAT.Test.Takers*dat2$SAT.Math.Avg..Score)/sum(dat2$Num.of.SAT.Test.Takers)
+mean_SAT<-sum(all_tot)/n
+
+
+### new
+dat2$SAT.Critical.Reading.Avg..Score<-as.numeric(as.character(dat2$SAT.Critical.Reading.Avg..Score))
+dat2$SAT.Writing.Avg..Score<-as.numeric(as.character(dat2$SAT.Writing.Avg..Score))
+sat_tots<-(dat2$SAT.Math.Avg..Score+dat2$SAT.Critical.Reading.Avg..Score+dat2$SAT.Writing.Avg..Score)
+quantile(sat_tots,.95)
+count<-sum(ifelse(sat_tots>=1498))

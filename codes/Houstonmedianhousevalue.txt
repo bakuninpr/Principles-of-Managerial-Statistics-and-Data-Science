@@ -1,0 +1,13 @@
+#setwd("C:/miscosas/empresas/2014-15/agosto/esta6005/casestudies")
+setwd("C:/miscosas/empresas/notas30012/data")
+all_data<-read.csv("Median_House_Value_by_Census_Block_Group_2010.csv", header=TRUE, sep=",", na.strings=" ")
+
+summary(all_data$Median_House_Value)
+   which(all_data$Median_House_Value==min(all_data$Median_House_Value))
+which(all_data$Median_House_Value==min(all_data$Median_House_Value,na.rm=T))
+all_data[1058,]
+
+dat2<-all_data[-which(all_data$Median_House_Value==min(all_data$Median_House_Value,na.rm=T)),]
+summary(dat2$Median_House_Value)
+plot(dat2$Median_House_Value) #values appear truncated at 1,000,001
+which(dat2$Median_House_Value==max(dat2$Median_House_Value,na.rm=T))

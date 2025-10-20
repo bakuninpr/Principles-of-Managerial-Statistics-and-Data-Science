@@ -1,0 +1,85 @@
+setwd("C:/miscosas/empresas/notas30012/data")
+
+# WARNING: the raw dataset is large. Your computer needs enough memory to load the data. Also, it may take a few minutes to load. After the command below. Everything else 
+# will run rather quickly
+dat<-read.table("EMS_Incident_Dispatch_Data.csv",sep=",",header=T)
+
+#subset
+dat<-data.frame(dat)
+# I kept some columns, i.e. valid dispatch response, etc. as a way to be more conservative when filtering the data for 0s and NAs
+dat<-dat[,c("INCIDENT_DATETIME","INITIAL_CALL_TYPE",
+"DISPATCH_RESPONSE_SECONDS_QY","INCIDENT_RESPONSE_SECONDS_QY","BOROUGH",
+"INITIAL_SEVERITY_LEVEL_CODE","VALID_DISPATCH_RSPNS_TIME_INDC",
+"VALID_INCIDENT_RSPNS_TIME_INDC","INCIDENT_DISPOSITION_CODE")]
+
+dat$DISPATCH_RESPONSE_SECONDS_QY[which(dat$DISPATCH_RESPONSE_SECONDS_QY==0)]<-NA #eliminate zeros
+dat2<-na.omit(dat) #eliminate rows with missing values (on columns of interest)
+#rm(dat)
+
+who<-which(dat2$INCIDENT_DISPOSITION_CODE==87) #cancelled
+dat2<-dat2[-who,]
+
+check <-as.POSIXct(strptime(format(dat2$INCIDENT_DATETIME, format="%x %X"),"%m/%d/%Y %I:%M:%S %p",tz=""))
+wd<-weekdays(check)
+#wd2<-wd[wd=="Sunday"]
+
+dat2$wd<-wd
+dat2<-dat2[dat2$wd=="Sunday",]
+dat2<-dat2[dat2$BOROUGH=="MANHATTAN",]
+
+#filter by type of call
+who<-which(dat2$INITIAL_CALL_TYPE=="CVA"|
+dat2$INITIAL_CALL_TYPE=="CVAC"|dat2$INITIAL_CALL_TYPE=="CVACFC"|
+dat2$INITIAL_CALL_TYPE=="CVACFT"|dat2$INITIAL_CALL_TYPE=="CVAFC"|dat2$INITIAL_CALL_TYPE=="CVAFT")
+dat3<-dat2[who,]
+check <-as.POSIXct(strptime(format(dat3$INCIDENT_DATETIME, format="%x %X"),"%m/%d/%Y",tz=""))
+# count by INCIDENT_DATETIME
+dat3$check<-check
+
+dim(dat3) #rows are the number of calls for stroke during period
+
+hij<-data.frame(table(dat3$check)) #a missing date would indicate zero calls (all Sundays appear to be here)
+summary(as.factor(hij[,2]))
+
+2*1/182+3*11/182+4*10/182+5*15/182+6*16/182+7*29/182+8*22/182+9*15/182+10*16/182+11*18/182+12*15/182+13*7/182+14*6/182+15*1/182
+mean(hij[,2])
+
+
+co<-summary(as.factor(hij[,2]))
+su<-sum(co)
+
+
+two<-co[1]/su
+three<-co[2]/su
+four<-co[3]/su
+five<-co[4]/su
+six<-co[5]/su
+seven<-co[6]/su
+eight<-co[7]/su
+nine<-co[8]/su
+ten<-co[9]/su
+eleven<-co[10]/su
+twelve<-co[11]/su
+thirteen<-co[12]/su
+fourteen<-co[13]/su
+fifteen<-co[14]/su
+
+G<-c("2","3","4","5","6","7","8","9","10","11","12","13","14","15")
+tt<-cbind(G,c(two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen))
+colnames(tt)<-c("Type","rF")
+ tt<-data.frame(tt)
+tt[,1] = factor(tt[,1],levels(tt[,1])[c(7,8,9,10,11,12,13,14,1,2,3,4,5,6)])
+tt[,2]<-as.numeric(as.character(tt[,2]))
+tt2<-tt
+tt2[,2]<-round(tt[,2],2)
+library(ggplot2)
+ggplot(data=tt, aes(x=Type, y=rF)) +
+  geom_bar(stat="identity", position=position_dodge(), colour="black") + theme_classic()+ #theme_bw() +
+  xlab('X') + ylim(0,0.20)+
+  ylab('Probability') + #ggtitle('New Students per Business Program')+ 
+  theme(axis.text.x = element_text(colour="grey20",size=12,angle=0,hjust=.5,vjust=.5,face="plain"))
+#ggsave("EMSStrokebarplot.png", height=8, width=13, dpi=72) 
+
+sum(tt[4:10,2])
+sum(tt[11:14,2])
+ mean(hij[,2]) + 1.96*sd(hij[,2])/sqrt(182)
